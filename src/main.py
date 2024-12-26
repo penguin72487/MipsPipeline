@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import os
 from collections import defaultdict, deque
 
@@ -121,14 +120,3 @@ if __name__ == "__main__":
         f.write(f"Total Cycles: {simulator.cycles}\n")
         f.write(f"Registers: {simulator.registers}\n")
         f.write(f"Memory: {simulator.memory}\n")
-=======
-import os 
-class MUPS:
-    pass
-
-
-with open(os.path.join(os.path.dirname(__file__), '../inputs/test3.txt'), 'r') as f:
-    lines = f.readlines()
-
-print(lines)
->>>>>>> 6418259454abae00188fce0b66c52795aa767442
