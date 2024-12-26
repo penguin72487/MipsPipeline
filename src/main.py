@@ -1,105 +1,113 @@
-import os
-from collections import deque
-
-class MIPSPipelineSimulator:
+class MIPSPipeline:
     def __init__(self):
-        self.registers = [1] * 32  # 初始化32個暫存器
-        self.registers[0] = 0  # $0寄存器固定為0
-        self.memory = [1] * 32  # 初始化記憶體
-        self.pipeline = deque(maxlen=5)  # 五階段管線
-        self.cycles = 0  # 週期計數器
-        self.instructions = []
+        self.registers = [0] * 32
+        self.memory = [0] * 1024  # 模擬的記憶體
+        self.pc = 0
+        self.pipeline = []  # 用於模擬 pipeline 的每個階段
+        self.cycles = 0
+        self.stage_log = []  # 用於記錄每個週期的 pipeline 狀態
+        self.stalled = False  # 用於表示是否有 stall
 
-    def load_instructions(self, filepath):
-        with open(filepath, 'r') as f:
-            self.instructions = [line.strip() for line in f.readlines() if line.strip()]
+    def load_memory(self, values):
+        for address, value in values.items():
+            self.memory[address] = value
 
-    def parse_instruction(self, instruction):
-        parts = instruction.replace(',', '').split()
-        op = parts[0]
-        if op in ('add', 'sub'):
-            return op, int(parts[1][1:]), int(parts[2][1:]), int(parts[3][1:])
-        elif op in ('lw', 'sw'):
-            reg = int(parts[1][1:])
-            offset, base = parts[2].split('(')
-            return op, reg, int(offset), int(base[1:-1])
-        elif op == 'beq':
-            return op, int(parts[1][1:]), int(parts[2][1:]), int(parts[3])
-        return None
-
-    def execute_pipeline(self):
-        while self.pipeline or self.instructions:
+    def execute_pipeline(self, instructions):
+        while self.pc < len(instructions) or len(self.pipeline) > 0:
             self.cycles += 1
+
+            # 記錄當前 pipeline 狀態
+            self.log_pipeline_state()
+
+            # 處理 pipeline 的執行階段
             if self.pipeline:
-                self.write_back()
-            if len(self.pipeline) >= 4:
-                self.memory_access()
-            if len(self.pipeline) >= 3:
-                self.execute()
-            if len(self.pipeline) >= 2:
-                self.decode()
-            if self.instructions:
-                self.fetch()
-            self.display_pipeline_state()
+                self.process_pipeline()
 
-    def fetch(self):
-        if self.instructions:
-            instruction = self.instructions.pop(0)
-            self.pipeline.appendleft((instruction, 'IF'))
+            # 加入新的指令到 pipeline
+            if not self.stalled and self.pc < len(instructions):
+                instruction = instructions[self.pc].strip()
+                self.pipeline.append((instruction, "IF"))
+                self.pc += 1
 
-    def decode(self):
-        instruction, stage = self.pipeline[-2]
-        self.pipeline[-2] = (instruction, 'ID')
+        return self.cycles
 
-    def execute(self):
-        instruction, stage = self.pipeline[-3]
-        op, *args = self.parse_instruction(instruction)
-        if op in ('add', 'sub'):
-            dest, src1, src2 = args
-            result = (self.registers[src1] + self.registers[src2]) if op == 'add' else (self.registers[src1] - self.registers[src2])
-            self.pipeline[-3] = (instruction, 'EX', result)
-        elif op == 'lw':
-            dest, offset, base = args
-            addr = self.registers[base] + offset
-            self.pipeline[-3] = (instruction, 'EX', addr)
-        elif op == 'sw':
-            src, offset, base = args
-            addr = self.registers[base] + offset
-            self.pipeline[-3] = (instruction, 'EX', self.registers[src], addr)
+    def process_pipeline(self):
+        for i, (instruction, stage) in enumerate(self.pipeline):
+            if stage == "IF":
+                self.pipeline[i] = (instruction, "ID")
+            elif stage == "ID":
+                if self.check_hazard(instruction):
+                    self.stalled = True
+                    return
+                else:
+                    self.stalled = False
+                    self.pipeline[i] = (instruction, "EX")
+            elif stage == "EX":
+                if self.execute_instruction(instruction):
+                    self.pipeline[i] = (instruction, "MEM")
+            elif stage == "MEM":
+                self.pipeline[i] = (instruction, "WB")  # 恢復 WB 階段
+            elif stage == "WB":
+                self.pipeline.pop(i)
+                break
 
-    def memory_access(self):
-        instruction, stage, *data = self.pipeline[-4]
-        if instruction.startswith('lw'):
-            addr = data[0]
-            value = self.memory[addr]
-            self.pipeline[-4] = (instruction, 'MEM', value)
-        elif instruction.startswith('sw'):
-            value, addr = data
-            self.memory[addr] = value
-            self.pipeline[-4] = (instruction, 'MEM')
+    def check_hazard(self, instruction):
+        parts = instruction.replace(",", "").split()
+        if parts[0] in ["lw", "sw", "add", "beq"]:
+            registers_in_use = [inst[1] for inst in self.pipeline if inst[1] in ["ID", "EX", "MEM"]]
+            if any(reg for reg in registers_in_use if reg in instruction):
+                return True  # 存在冒險
+        return False
 
-    def write_back(self):
-        if not self.pipeline:
-            return
-        instruction, stage, *data = self.pipeline.pop()
-        if instruction.startswith(('add', 'sub', 'lw')) and data:
-            dest = int(instruction.split()[1][1:])
-            self.registers[dest] = data[0]
+    def execute_instruction(self, instruction):
+        instruction = instruction.replace(",", "").strip()  # 移除逗號與多餘空白
+        parts = instruction.split()
+        if parts[0] == "lw":
+            rt = int(parts[1][1:])
+            offset, base = map(int, parts[2].strip("()").split("($"))
+            self.registers[rt] = self.memory[self.registers[base] + offset]
+        elif parts[0] == "sw":
+            rt = int(parts[1][1:])
+            offset, base = map(int, parts[2].strip("()").split("($"))
+            self.memory[self.registers[base] + offset] = self.registers[rt]
+        elif parts[0] == "add":
+            rd = int(parts[1][1:])
+            rs = int(parts[2][1:])
+            rt = int(parts[3][1:])
+            self.registers[rd] = self.registers[rs] + self.registers[rt]
+        elif parts[0] == "beq":
+            rs = int(parts[1][1:])
+            rt = int(parts[2][1:])
+            offset = int(parts[3])
+            if self.registers[rs] == self.registers[rt]:
+                self.pc += offset
+        else:
+            raise ValueError(f"Unknown instruction: {instruction}")
+        return True
 
-    def display_pipeline_state(self):
-        print(f"Cycle {self.cycles}:")
-        for i, (instr, stage, *_) in enumerate(self.pipeline):
-            print(f"  Stage {5 - i}: {stage} - {instr}")
-        print("Registers:", self.registers)
-        print("Memory:", self.memory)
+    def log_pipeline_state(self):
+        # 記錄每個週期的 pipeline 狀態
+        state = f"Cycle {self.cycles}: " + ", ".join([f"{inst} ({stage})" for inst, stage in self.pipeline])
+        if self.stalled:
+            state += " [STALL]"
+        self.stage_log.append(state)
+        print(state)  # 顯示到命令列
 
-if __name__ == "__main__":
-    simulator = MIPSPipelineSimulator()
-    input_file = "inputs/test3.txt"
-    simulator.load_instructions(input_file)
-    simulator.execute_pipeline()
-    output_file = "outputs/test3.txt"
-    with open(output_file, 'w') as f:
-        f.write(f"Total Cycles: {simulator.cycles}\n")
-        f.write(f"Registers: {simulator.registers}\n")
-        f.write(f"Memory: {simulator.memory}\n")
+# 讀取 inputs/test3.txt
+with open("inputs/test3.txt", "r") as f:
+    instructions = f.readlines()
+
+# 初始化模擬器與記憶體
+pipeline = MIPSPipeline()
+pipeline.load_memory({8: 5, 16: 10})  # 示例數據
+
+# 執行指令並模擬 pipeline
+cycles = pipeline.execute_pipeline(instructions)
+
+# 寫入 outputs/test3.txt
+with open("outputs/test3.txt", "w") as f:
+    f.write(f"Total Cycles: {cycles}\n")
+    f.write("Pipeline Stages per Cycle:\n")
+    f.write("\n".join(pipeline.stage_log) + "\n")
+    f.write(f"Registers: {pipeline.registers}\n")
+    f.write(f"Memory: {pipeline.memory[:32]}\n")
