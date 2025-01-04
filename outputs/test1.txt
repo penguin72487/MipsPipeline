@@ -1,40 +1,35 @@
+
 Case 1: 
 ## Each clocks
+Cycle 0: 
 Cycle 1: 
-    lw $2, 8($0) IF 
-
+    lw $2, 8($0) IF
 Cycle 2: 
-    lw $2, 8($0) ID 
-    lw $3, 16($0) IF 
-
+    lw $2, 8($0) ID
+    lw $3, 16($0) IF
 Cycle 3: 
-    lw $2, 8($0) EX 
-    lw $3, 16($0) ID 
-    add $6, $4, $5 IF 
-
+    lw $2, 8($0) EX
+    lw $3, 16($0) ID
+    add $6, $4, $5 IF
 Cycle 4: 
-    lw $2, 8($0) MEM 
-    lw $3, 16($0) EX 
-    add $6, $4, $5 ID 
-    sw $6, 24($0) IF 
-
+    lw $2, 8($0) MEM
+    lw $3, 16($0) EX
+    add $6, $4, $5 ID
+    sw $6, 24($0) IF
 Cycle 5: 
-    lw $2, 8($0) WB 
-    lw $3, 16($0) MEM 
-    add $6, $4, $5 EX 
-    sw $6, 24($0) ID 
-
+    lw $2, 8($0) WB
+    lw $3, 16($0) MEM
+    add $6, $4, $5 EX
+    sw $6, 24($0) ID
 Cycle 6: 
-    lw $3, 16($0) WB 
-    add $6, $4, $5 MEM 
-    sw $6, 24($0) EX 
-
+    lw $3, 16($0) WB
+    add $6, $4, $5 MEM
+    sw $6, 24($0) EX
 Cycle 7: 
-    add $6, $4, $5 WB 
-    sw $6, 24($0) MEM 
-
+    add $6, $4, $5 WB
+    sw $6, 24($0) MEM
 Cycle 8: 
-    sw $6, 24($0) WB 
+    sw $6, 24($0) WB
 
 
 ## Final Result:
@@ -45,4 +40,4 @@ Final Register Values:
 Registers: [0, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 
 Final Memory Values:
-[1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1]
