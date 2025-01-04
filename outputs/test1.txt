@@ -1,40 +1,40 @@
 Case 1: 
 ## Each clocks
 Cycle 1: 
-    lw IF 
+    lw $2, 8($0) IF 
 
 Cycle 2: 
-    lw ID 
-    lw IF 
+    lw $2, 8($0) ID 
+    lw $3, 16($0) IF 
 
 Cycle 3: 
-    lw EX 
-    lw ID 
-    add IF 
+    lw $2, 8($0) EX 
+    lw $3, 16($0) ID 
+    add $6, $4, $5 IF 
 
 Cycle 4: 
-    lw MEM 
-    lw EX 
-    add ID 
-    sw IF 
+    lw $2, 8($0) MEM 
+    lw $3, 16($0) EX 
+    add $6, $4, $5 ID 
+    sw $6, 24($0) IF 
 
 Cycle 5: 
-    lw WB 
-    lw MEM 
-    add EX 
-    sw ID 
+    lw $2, 8($0) WB 
+    lw $3, 16($0) MEM 
+    add $6, $4, $5 EX 
+    sw $6, 24($0) ID 
 
 Cycle 6: 
-    lw WB 
-    add MEM 
-    sw EX 
+    lw $3, 16($0) WB 
+    add $6, $4, $5 MEM 
+    sw $6, 24($0) EX 
 
 Cycle 7: 
-    add WB 
-    sw MEM 
+    add $6, $4, $5 WB 
+    sw $6, 24($0) MEM 
 
 Cycle 8: 
-    sw WB 
+    sw $6, 24($0) WB 
 
 
 ## Final Result:

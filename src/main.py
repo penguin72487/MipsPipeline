@@ -143,7 +143,7 @@ class MIPSPipeline:
 
     def log_pipeline_state(self):
         r = ""
-        st = [[item[0].split()[0], item[1], ""] for item in self.pipeline]
+        st = [[item[0], item[1], ""] for item in self.pipeline]
         for i in range(len(st)):
             r += "    " + st[i][0] + " " + st[i][1] + " " + st[i][2] + "\n"
         if self.cycles == 0:
