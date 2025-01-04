@@ -1,15 +1,23 @@
-Total Cycles: 11
-Pipeline Stages per Cycle:
+Case 1: 
+## Each clocks
 Cycle 1: 
 Cycle 2: lw $2, 8($0) (IF)
 Cycle 3: lw $2, 8($0) (ID), lw $3, 16($0) (IF)
 Cycle 4: lw $2, 8($0) (EX), lw $3, 16($0) (ID), add $6, $4, $5 (IF)
 Cycle 5: lw $2, 8($0) (MEM), lw $3, 16($0) (EX), add $6, $4, $5 (ID), sw $6, 24($0) (IF)
 Cycle 6: lw $2, 8($0) (WB), lw $3, 16($0) (MEM), add $6, $4, $5 (EX), sw $6, 24($0) (ID)
-Cycle 7: lw $3, 16($0) (WB), add $6, $4, $5 (MEM), sw $6, 24($0) (STALL) [STALL]
-Cycle 8: add $6, $4, $5 (WB), sw $6, 24($0) (STALL)
+Cycle 7: lw $3, 16($0) (WB), add $6, $4, $5 (MEM), sw $6, 24($0) (ID) [STALL]
+Cycle 8: add $6, $4, $5 (WB), sw $6, 24($0) (ID) [STALL]
 Cycle 9: sw $6, 24($0) (EX)
 Cycle 10: sw $6, 24($0) (MEM)
 Cycle 11: sw $6, 24($0) (WB)
-Registers: [0, 0, 5, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-Memory: [0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+## Final Result:
+
+Total Cycles: 11
+
+Final Register Values:
+Registers: [0, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+
+Final Memory Values:
+[1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]

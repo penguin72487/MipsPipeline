@@ -1,12 +1,13 @@
 class MIPSPipeline:
     def __init__(self):
-        self.registers = [0] * 32
-        self.memory = [0] * 1024  # 模擬的記憶體
+        self.registers = [1] * 32
+        self.memory = [1] * 1024  # 模擬的記憶體
         self.pc = 0
         self.pipeline = []  # 用於模擬 pipeline 的每個階段
         self.cycles = 0
         self.stage_log = []  # 用於記錄每個週期的 pipeline 狀態
         self.stalled = False  # 用於表示是否有 stall
+        self.registers[0] = 0  # $zero 寄存器的值永遠為 0
 
     def load_memory(self, values):
         for address, value in values.items():
@@ -142,16 +143,23 @@ with open(f"inputs/test{test_case}.txt", "r") as f:
 
 # 初始化模擬器與記憶體
 pipeline = MIPSPipeline()
-pipeline.load_memory({8: 5, 16: 10})
 
 # 執行指令並模擬 pipeline
 cycles = pipeline.execute_pipeline(instructions)
 
-
+w_mem = []
+mem_word = ""
+n = 0
+while len(w_mem) < 32:
+    w_mem.append(pipeline.memory[n]) 
+    mem_word += "W"+ str(n//4) + " "
+    n+=4
 # 寫入 outputs/test.txt
 with open(f"outputs/test{test_case}.txt", "w") as f:
-    f.write(f"Total Cycles: {cycles}\n")
-    f.write("Pipeline Stages per Cycle:\n")
-    f.write("\n".join(pipeline.stage_log) + "\n")
-    f.write(f"Registers: {pipeline.registers}\n")
-    f.write(f"Memory: {pipeline.memory[:32]}\n")
+    f.write(f"Case {test_case}: \n## Each clocks\n")
+    f.write("\n".join(pipeline.stage_log) + "\n\n")
+    f.write(f"## Final Result:\n\nTotal Cycles: {cycles}\n\n")
+    f.write(f"Final Register Values:\n")
+    f.write(f"Registers: {pipeline.registers}\n\n")
+    f.write(f"Final Memory Values:\n")
+    f.write(f"{w_mem}\n")
