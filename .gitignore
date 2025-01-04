@@ -33,5 +33,5 @@
 
 
 .vscode/
-siro.py
+siro.*
 .gitignore
