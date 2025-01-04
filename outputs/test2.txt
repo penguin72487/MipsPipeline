@@ -15,8 +15,7 @@ Cycle 3:
 Cycle 4: 
     lw MEM 
     lw EX 
-    add ID 
-    sw IF 
+    add IF 
 
 Cycle 5: 
     lw WB 
@@ -26,28 +25,24 @@ Cycle 5:
 
 Cycle 6: 
     lw WB 
-    add ID 
-    sw IF 
-
-Cycle 7: 
     add EX 
     sw ID 
 
-Cycle 8: 
+Cycle 7: 
     add MEM 
     sw EX 
 
-Cycle 9: 
+Cycle 8: 
     add WB 
     sw MEM 
 
-Cycle 10: 
+Cycle 9: 
     sw WB 
 
 
 ## Final Result:
 
-Total Cycles: 10
+Total Cycles: 9
 
 Final Register Values:
 Registers: [0, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]

@@ -33,22 +33,20 @@ class MIPSPipeline:
         return self.cycles
 
     def process_pipeline(self):
-        data_hazard = False  # 用於判斷是否遇到數據冒險
+        data_hazard = False  # 是否遇到數據冒險
 
         for i in range(len(self.pipeline)):
             instruction, stage = self.pipeline[i]
 
             if stage == "IF":
-                # 檢查進入 ID 階段是否有冒險
                 if self.check_hazard(instruction):
-                    data_hazard = True  # 發現資料冒險，標記暫停
-                    continue  # 停留在 IF 階段
+                    data_hazard = True  # 發現數據冒險，標記 stall
+                    continue
                 else:
                     self.pipeline[i] = (instruction, "ID")
             elif stage == "ID":
-                # 檢查進入 EX 階段是否有冒險
                 if self.check_hazard(instruction):
-                    data_hazard = True  # 發現資料冒險，標記暫停
+                    data_hazard = True  # 發現數據冒險，標記 stall
                     continue
                 else:
                     self.pipeline[i] = (instruction, "EX")
@@ -60,14 +58,13 @@ class MIPSPipeline:
             elif stage == "WB":
                 self.pipeline[i] = (instruction, "DONE")
 
-        # 移除已經完成的指令
+        # ✅ 修正這一行
         self.pipeline = [(inst, stage) for inst, stage in self.pipeline if stage != "DONE"]
 
-        # 如果遇到數據冒險，則暫停當前週期
-        if data_hazard:
-            self.stalled = True  # 發現數據冒險，僅暫停當前
-        else:
-            self.stalled = False
+        # 如果遇到數據冒險，則 stall 只影響當前 cycle
+        self.stalled = data_hazard
+
+
 
 
     def check_hazard(self, instruction):
@@ -88,7 +85,7 @@ class MIPSPipeline:
             if "(" in parts[2]:
                 sources = [int(parts[1][1:]), int(parts[2].split("(")[1][1:].strip(")"))]
 
-        # 檢查流水線中是否有資料衝突
+        # 檢查流水線中是否有數據冒險
         for inst, stage in self.pipeline:
             inst_parts = inst.replace(",", "").split()
             inst_op = inst_parts[0]
@@ -96,12 +93,16 @@ class MIPSPipeline:
 
             if inst_op in ["add", "sub", "lw"]:
                 inst_target = int(inst_parts[1][1:])
-            print(inst_target)
-            # 僅當來源寄存器的值尚未可用時，返回 True
+
+            # 檢測數據冒險 (RAW Hazard)
             if inst_target and inst_target in sources:
-                if stage in ["ID", "WB"]:  # 資料尚未可用，需要STALL
+                if stage == "ID":  # 在 ID 階段，表示數據還未準備好，必須 stall
                     return True
-                if stage in ["EX", "MEM"]:  # 資料可用，無需STALL
+                if stage == "EX" and inst_op == "lw":  
+                    # 如果前面是 lw，並且正在 EX 階段，那麼數據還沒到 MEM，add 需要 stall
+                    return True
+                if stage in ["MEM", "WB"]:  
+                    # 如果已經到了 MEM 或 WB，Forwarding 機制可用，不需要 stall
                     continue
 
         return False
@@ -153,7 +154,7 @@ class MIPSPipeline:
         print(self.pipeline)
 
 
-test_case = 1
+test_case = 2
 
 # 讀取 inputs/test.txt
 with open(f"inputs/test{test_case}.txt", "r") as f:
