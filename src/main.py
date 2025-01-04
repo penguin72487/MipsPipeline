@@ -125,14 +125,19 @@ class MIPSPipeline:
         return True
 
     def log_pipeline_state(self):
+        # st = "\\".join([f"{inst} ({stage})" for inst, stage in self.pipeline])
+        
         state = f"Cycle {self.cycles}: " + ", ".join([f"{inst} ({stage})" for inst, stage in self.pipeline])
         if self.stalled:
             state += " [STALL]"
         self.stage_log.append(state)
         print(state)
 
-# 讀取 inputs/test3.txt
-with open("inputs/test4.txt", "r") as f:
+
+test_case = 1
+
+# 讀取 inputs/test.txt
+with open(f"inputs/test{test_case}.txt", "r") as f:
     instructions = f.readlines()
 
 # 初始化模擬器與記憶體
@@ -142,8 +147,9 @@ pipeline.load_memory({8: 5, 16: 10})
 # 執行指令並模擬 pipeline
 cycles = pipeline.execute_pipeline(instructions)
 
-# 寫入 outputs/test3.txt
-with open("outputs/test3.txt", "w") as f:
+
+# 寫入 outputs/test.txt
+with open(f"outputs/test{test_case}.txt", "w") as f:
     f.write(f"Total Cycles: {cycles}\n")
     f.write("Pipeline Stages per Cycle:\n")
     f.write("\n".join(pipeline.stage_log) + "\n")
