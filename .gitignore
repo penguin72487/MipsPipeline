@@ -33,4 +33,5 @@
 
 
 .vscode/
-fail.py
+siro.py
+.gitignore
