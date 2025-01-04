@@ -1,4 +1,4 @@
-Case 1: 
+Case 2: 
 ## Each clocks
 Cycle 1: 
     lw IF 
@@ -21,28 +21,36 @@ Cycle 4:
 Cycle 5: 
     lw WB 
     lw MEM 
-    add EX 
-    sw ID 
+    add ID 
+    sw IF 
 
 Cycle 6: 
     lw WB 
+    add ID 
+    sw IF 
+
+Cycle 7: 
+    add EX 
+    sw ID 
+
+Cycle 8: 
     add MEM 
     sw EX 
 
-Cycle 7: 
+Cycle 9: 
     add WB 
     sw MEM 
 
-Cycle 8: 
+Cycle 10: 
     sw WB 
 
 
 ## Final Result:
 
-Total Cycles: 8
+Total Cycles: 10
 
 Final Register Values:
-Registers: [0, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+Registers: [0, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 
 Final Memory Values:
 [1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]

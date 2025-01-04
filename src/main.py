@@ -4,7 +4,7 @@ class MIPSPipeline:
         self.memory = [1] * 1024  # 模擬的記憶體
         self.pc = 0
         self.pipeline = []  # 用於模擬 pipeline 的每個階段
-        self.cycles = 0
+        self.cycles = -1
         self.stage_log = []  # 用於記錄每個週期的 pipeline 狀態
         self.stalled = False  # 用於表示是否有 stall
         self.registers[0] = 0  # $zero 寄存器的值永遠為 0
@@ -39,10 +39,16 @@ class MIPSPipeline:
             instruction, stage = self.pipeline[i]
 
             if stage == "IF":
-                self.pipeline[i] = (instruction, "ID")
-            elif stage == "ID":
+                # 檢查進入 ID 階段是否有冒險
                 if self.check_hazard(instruction):
-                    data_hazard = True  # 發現數據冒險，標記暫停
+                    data_hazard = True  # 發現資料冒險，標記暫停
+                    continue  # 停留在 IF 階段
+                else:
+                    self.pipeline[i] = (instruction, "ID")
+            elif stage == "ID":
+                # 檢查進入 EX 階段是否有冒險
+                if self.check_hazard(instruction):
+                    data_hazard = True  # 發現資料冒險，標記暫停
                     continue
                 else:
                     self.pipeline[i] = (instruction, "EX")
@@ -56,43 +62,53 @@ class MIPSPipeline:
 
         # 移除已經完成的指令
         self.pipeline = [(inst, stage) for inst, stage in self.pipeline if stage != "DONE"]
-            
+
         # 如果遇到數據冒險，則暫停當前週期
-        
         if data_hazard:
             self.stalled = True  # 發現數據冒險，僅暫停當前
         else:
             self.stalled = False
 
+
     def check_hazard(self, instruction):
         parts = instruction.replace(",", "").split()
         op = parts[0]
         sources = []
+        target = None
 
-        # 根據指令類型提取源寄存器
-        if op in ["add", "sub", "beq"]:
-            sources = [
-                int(part[1:]) for part in parts[2:] if part.startswith("$")
-            ]  # 確保只處理寄存器
+        # 提取目標和來源寄存器
+        if op in ["add", "sub"]:
+            target = int(parts[1][1:])
+            sources = [int(part[1:]) for part in parts[2:] if part.startswith("$")]
         elif op == "lw":
+            target = int(parts[1][1:])
             if "(" in parts[2]:
                 sources = [int(parts[2].split("(")[1][1:].strip(")"))]
         elif op == "sw":
             if "(" in parts[2]:
-                sources = [int(parts[1][1:])]
+                sources = [int(parts[1][1:]), int(parts[2].split("(")[1][1:].strip(")"))]
 
-        # 檢查流水線中其他指令是否正在使用相關寄存器
+        # 檢查流水線中是否有資料衝突
         for inst, stage in self.pipeline:
-            if stage in ["EX", "MEM", "WB"]:  # 只檢查這些階段
-                inst_parts = inst.replace(",", "").split()
-                if inst_parts[0] in ["add", "sub", "lw"]:  # 目標寄存器相關的指令
-                    inst_dest = int(inst_parts[1][1:])
-                    if inst_dest in sources:  # 如果目標寄存器與源寄存器有衝突
-                        return True
+            inst_parts = inst.replace(",", "").split()
+            inst_op = inst_parts[0]
+            inst_target = None
+
+            if inst_op in ["add", "sub", "lw"]:
+                inst_target = int(inst_parts[1][1:])
+            print(inst_target)
+            # 僅當來源寄存器的值尚未可用時，返回 True
+            if inst_target and inst_target in sources:
+                if stage in ["ID", "WB"]:  # 資料尚未可用，需要STALL
+                    return True
+                if stage in ["EX", "MEM"]:  # 資料可用，無需STALL
+                    continue
+
         return False
 
 
 
+    
     def execute_instruction(self, instruction):
         parts = instruction.replace(",", "").strip().split()
         op = parts[0]
@@ -126,13 +142,15 @@ class MIPSPipeline:
         return True
 
     def log_pipeline_state(self):
-        # st = "\\".join([f"{inst} ({stage})" for inst, stage in self.pipeline])
-        
-        state = f"Cycle {self.cycles}: " + ", ".join([f"{inst} ({stage})" for inst, stage in self.pipeline])
-        if self.stalled:
-            state += " [STALL]"
+        r = ""
+        st = [[item[0].split()[0], item[1], ""] for item in self.pipeline]
+        for i in range(len(st)):
+            r += "    " + st[i][0] + " " + st[i][1] + " " + st[i][2] + "\n"
+        if self.cycles == 0:
+            return
+        state = f"Cycle {self.cycles}: \n" + r
         self.stage_log.append(state)
-        print(state)
+        print(self.pipeline)
 
 
 test_case = 1
@@ -143,6 +161,7 @@ with open(f"inputs/test{test_case}.txt", "r") as f:
 
 # 初始化模擬器與記憶體
 pipeline = MIPSPipeline()
+# pipeline.load_memory({8: 5, 16: 10})
 
 # 執行指令並模擬 pipeline
 cycles = pipeline.execute_pipeline(instructions)
