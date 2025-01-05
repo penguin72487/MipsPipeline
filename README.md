@@ -24,14 +24,10 @@ py src\main.py
 
 ## 工作分配
 
-輸出格式: Siroku
-Pipline、stall、forwarding: 西瓜
-Data hazard、Predict not taken: 企鵝
-
-- 1
-- 1115530 劉柏均(SiroKu1006):處理輸入、輸出和部分stall
-- 3
-- 4
+劉沛辰(西瓜)：處理pipeline、stall、forwarding
+劉柏均(SiroKu1006)：處理輸入、輸出、測試檢查是否符合預期
+錢昱名(企鵝)：處理data hazard、Predict not taken
+朱俊傑(Jax)：
 
 ## 遭遇的問題
 
