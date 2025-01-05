@@ -24,16 +24,6 @@ py src\main.py
 
 ## 工作分配
 
-<<<<<<< HEAD
-輸出格式: Siroku
-Pipline、stall、forwarding: 西瓜
-Data hazard、Predict not taken: 企鵝
-收尾檢查 bug 丶代碼格式美化：Jaxx9527
-
-- 1
-- 1115530 劉柏均(SiroKu1006):處理輸入、輸出和部分 stall
-- 3
-- # 4
   劉沛辰(西瓜)：處理 pipeline、stall、forwarding
   劉柏均(SiroKu1006)：處理輸入、輸出、測試檢查是否符合預期
   錢昱名(企鵝)：處理 data hazard、Predict not taken
@@ -48,7 +38,6 @@ Data hazard、Predict not taken: 企鵝
 
 ## 個人心得
 
-<<<<<<< HEAD
 ### A1115513 劉沛辰(watermelon0725)
 
 - A1115513 劉沛辰(peipei930725):這專題真的很恐怖，瘋狂 debug，原先以為就是模擬一個 MIPS 有多難，以為就是簡單的有限狀態機的實作，但是 stall 和 forwarding 產生的蝴蝶效應讓我卡超級久，一個 stall 會影響到所有的 instructions，然後還要注意有沒有 data hazard，還有 beq 和,lw 的狀態處理，雖然很難寫，遇到的問題很多，也很謝謝 gpt 和組員的幫忙，不然我會寫到崩潰。
@@ -56,14 +45,11 @@ Data hazard、Predict not taken: 企鵝
 ### 1115530 劉柏均(SiroKu1006)
 
 - 這次專題讓我體驗到 MIPS 的可怕之處，搞了一個下午只弄好一個簡單的小功能，為了修 data hazard 花了很多時間，最後還是靠我的組員把他修好，我好愛他。
-- 3
-- 4
-=======
-### A1115531
+
+### A1115531 錢昱名(penguin72487)
 
 我寫這個壓力好大，好難寫，寫了這個才真的了解data hazard發生在哪? Forwarding是在哪裡。
   
 ### A1115530 劉柏均(SiroKu1006)
 
 這次專題讓我體驗到MIPS的可怕之處，搞了一個下午只弄好一個簡單的小功能，為了修data hazard花了很多時間，最後還是靠我的組員把他修好，我好愛他。
->>>>>>> a034041fb4c06311b731d4cba57f57a41d27644d
