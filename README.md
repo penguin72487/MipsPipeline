@@ -31,6 +31,11 @@ py src\main.py
 
 ## 遭遇的問題
 
+1. pipeline無法以正常順序運行，state的轉換遇到問題使所有的instruction都卡在ID。  
+2. Forwarding還要細分成beq和其他的Forwarding，beq要在ID階段進行並慢一個cycle，很常實作出一個功能後前面的測資就壞掉了。  
+3. beq和lw的stall，有時候條件成立了但是就是不跳轉，或是直接忽略了data hazard，尤其是test3的lw和beq要進行兩個stall卡最久，因為lw特別的要在mem才獲取資料，和beq需要提前在id進行計算。  
+4. beq無限迴圈的問題，因為pipeline要在各個階段傳遞，然後做完基礎的pipeline後為了時做stall或是beq造成無限迴圈，beq直接卡在ID階段然後卡死。  
+
 ## 個人心得
 
 - 1

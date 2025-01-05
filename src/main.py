@@ -19,15 +19,15 @@ class MIPSPipeline:
             self.cycles += 1
 
             # debug print
-            print(f"[DEBUG] cycle={self.cycles}, pc={self.pc}, pipeline={self.pipeline}, "
-                  f"branch_taken={self.branch_taken}, branch_pc={self.branch_pc}, "
-                  f"stall_count={self.branch_stall_count}")
-            
+            #print(f"[DEBUG] cycle={self.cycles}, pc={self.pc}, pipeline={self.pipeline}, "
+            #      f"branch_taken={self.branch_taken}, branch_pc={self.branch_pc}, "
+            #      f"stall_count={self.branch_stall_count}")
+
             self.log_pipeline_state()
             # 處理 pipeline
             if self.pipeline:
                 self.process_pipeline()
-                
+
 
 
             # ✅ beq 在 WB 階段影響 PC，但不清空 pipeline
@@ -47,7 +47,7 @@ class MIPSPipeline:
 
     def process_pipeline(self):
         data_hazard = False
-        stalled_by_beq = False  
+        stalled_by_beq = False
 
         for i in range(len(self.pipeline)):
             instruction, stage = self.pipeline[i]
@@ -143,8 +143,8 @@ class MIPSPipeline:
 
         # 依序檢查「更前面的指令」是否會造成 hazard
 
-        
-        if op == "beq": 
+
+        if op == "beq":
             # beq 指令的 hazard 檢查
             # 如果rt, rs 在pipeline[:idx]中
             # add sub 時 EX會Forward 到 beq 的ID ，所以 IF ID EX 會造成 hazard
@@ -152,20 +152,20 @@ class MIPSPipeline:
             # sw 沒差
             for j in range(idx):
                 inst_j, stage_j = self.pipeline[j]
-                inst_j_parts = inst_j.split() 
+                inst_j_parts = inst_j.split()
                 inst_j_op = inst_j_parts[0]
                 inst_j_target = int(inst_j_parts[1][1:])
                 if inst_j_target not in sources:
                     continue
-                
-                
+
+
                 if inst_j_op in ["add", "sub"]:
                     if stage_j in ["IF", "ID", "EX", "MEM"]:
                         return True
                 if inst_j_op in ["lw"]:
                     if stage_j in ["IF", "ID", "EX", "MEM", "WB"]:
                         return True
-            
+
         elif op in ["add", "sub"]:
             # add sub 指令的 hazard 檢查
             # 如果 rs, rt 在 pipeline[:idx] 中
@@ -179,56 +179,49 @@ class MIPSPipeline:
                 inst_j_target = int(inst_j_parts[1][1:])
                 if inst_j_target not in sources:
                     continue
-                
+
                 if inst_j_op in ["add", "sub"]:
                     if stage_j in ["IF", "ID", "EX"]:
                         return True
                 if inst_j_op in ["lw"]:
                     if stage_j in ["IF", "ID", "EX", "MEM"]: #再確認一下
                         return True
-        elif op in ["lw"]:
+        elif op in ["lw","sw"]:
             return False
 
-
-
-                
-
-
-            
-        
         return False
 
     def get_signal(self, stage, instruction):
         op = instruction.split()[0]
         signal_format = {
             "lw": {
-                "EX": "01 010 11",  
-                "MEM": "010 11",    
-                "WB": "11"          
+                "EX": "01 010 11",
+                "MEM": "010 11",
+                "WB": "11"
             },
             "sw": {
-                "EX": "X1 001 0X",  
-                "MEM": "001 0X",    
-                "WB": "0X"          
+                "EX": "X1 001 0X",
+                "MEM": "001 0X",
+                "WB": "0X"
             },
             "add": {
-                "EX": "10 000 10",  
-                "MEM": "000 10",    
-                "WB": "10"          
+                "EX": "10 000 10",
+                "MEM": "000 10",
+                "WB": "10"
             },
             "sub": {
-                "EX": "10 000 10",  
-                "MEM": "000 10",    
-                "WB": "10"          
+                "EX": "10 000 10",
+                "MEM": "000 10",
+                "WB": "10"
             },
             "beq": {
-                "EX": "X0 100 0X",  
-                "MEM": "100 0X",    
-                "WB": "0X"          
+                "EX": "X0 100 0X",
+                "MEM": "100 0X",
+                "WB": "0X"
             }
         }
         return signal_format.get(op, {}).get(stage, "")
-    
+
     def log_pipeline_state(self):
         # 當 cycle == 0 時，直接不做任何紀錄
         if self.cycles == 0:
