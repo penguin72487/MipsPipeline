@@ -61,14 +61,7 @@ class MIPSPipeline:
                     self.pipeline[i] = (instruction, "ID")
 
             elif stage == "ID":
-                # if "beq" in instruction:
-                #     if self.branch_stall_count < 2:
-                #         self.branch_stall_count += 1
-                #         data_hazard = True
-                #         stalled_by_beq = True
-                #         continue
-                #     else:
-                #         self.branch_stall_count = 0
+
 
                 if self.check_hazard(instruction, i, stage):
                     data_hazard = True
@@ -200,24 +193,6 @@ class MIPSPipeline:
                 
 
 
-        # # 依序檢查「更前面的指令」是否會造成 hazard
-        # for j in range(idx):
-        #     inst_j, stage_j = self.pipeline[j]
-        #     # inst_j 已經是沒有逗號的字串
-        #     inst_j_parts = inst_j.split()
-        #     inst_j_op = inst_j_parts[0]
-        #     inst_j_target = None
-
-        #     if inst_j_op in ["add", "sub", "lw"]:
-        #         inst_j_target = int(inst_j_parts[1][1:])
-            
-        #     if inst_j_target and inst_j_target in sources:
-        #         if stage_j == "ID":
-        #             return True
-        #         if stage_j == "EX" and inst_j_op == "lw":
-        #             return True
-        #         if stage_j in ["MEM", "WB"]:
-        #             continue
             
         
         return False
@@ -316,16 +291,6 @@ class MIPSPipeline:
             rt = int(parts[2][1:])
             offset = int(parts[3])
 
-            # if self.registers[rs] == self.registers[rt]:
-            #     self.branch_taken = True
-            #     self.branch_pc = self.pc + offset
-            #     self.branch_canceled = True
-                # if offset < 0:
-                #     self.pipeline = []
-                # else:
-                #     # beq 成立，清空 beq 後面的指令
-                #     for i in range(offset):
-                #         self.pipeline[i+1] = ("", "DONE")
         else:
             raise ValueError(f"Unknown instruction: {instruction}")
 
