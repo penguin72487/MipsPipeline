@@ -24,20 +24,15 @@ py src\main.py
 
 ## 工作分配
 
-沒Pipline的基本功能，加上Pipline只有stall，forwarding、用Predict not taken
 輸出格式: Siroku
 Pipline、stall、forwarding: 西瓜
 Data hazard、Predict not taken: 企鵝
-
-- 1
-- 2
-- 3
-- 4
 
 
 ## 遭遇的問題
 
 ## 個人心得
+
 - 1
 - 2
 - 3
