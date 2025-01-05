@@ -9,6 +9,7 @@ class MIPSPipeline:
         self.stalled = False  # 是否因為 hazard 停滯
         self.branch_taken = False  # `beq` 是否成立
         self.branch_pc = None  # `beq` 在 WB 階段才改變 `PC`
+        self.branch_canceled = False  # 一開始是 False，如果 `beq` 成立，則改為 True
         self.branch_stall_count = 0  # `beq` 的 `ID` 階段需要 stall 兩次
         self.registers[0] = 0  # `$zero` 永遠為 0
 
@@ -157,31 +158,39 @@ class MIPSPipeline:
     def execute_instruction(self, instruction):
         parts = instruction.replace(",", "").strip().split()
         op = parts[0]
+
+        # 如果 branch_canceled 已為 True，直接 return True，但跳過任何寫入
+        # （不過 'beq' 自己還是要跑判定，所以要排除掉 beq）
+        if self.branch_canceled and op not in ["beq"]:
+            # 依然 return True 讓 pipeline 繼續往下做 MEM, WB，但實際不改任何東西
+            return True
+
         if op == "lw":
             rt = int(parts[1][1:])
             offset, base = map(int, parts[2].strip("()").split("($"))
-            # ★ 修正：將位址除以 4，才能對應 memory list 的索引
             mem_address = (self.registers[base] + offset) // 4
             self.registers[rt] = self.memory[mem_address]
 
         elif op == "sw":
             rt = int(parts[1][1:])
             offset, base = map(int, parts[2].strip("()").split("($"))
-            # 這邊原本就有 /4，保留即可
             mem_address = (self.registers[base] + offset) // 4
             self.memory[mem_address] = self.registers[rt]
+
         elif op == "add":
             rd = int(parts[1][1:])
             rs = int(parts[2][1:])
             rt = int(parts[3][1:])
             if not self.branch_taken:
                 self.registers[rd] = self.registers[rs] + self.registers[rt]
+
         elif op == "sub":
             rd = int(parts[1][1:])
             rs = int(parts[2][1:])
             rt = int(parts[3][1:])
             if not self.branch_taken:
                 self.registers[rd] = self.registers[rs] - self.registers[rt]
+
         elif op == "beq":
             rs = int(parts[1][1:])
             rt = int(parts[2][1:])
@@ -189,12 +198,16 @@ class MIPSPipeline:
             if self.registers[rs] == self.registers[rt]:
                 self.branch_taken = True
                 self.branch_pc = self.pc + offset
+                # ★ 這裡設 branch_canceled
+                self.branch_canceled = True
         else:
             raise ValueError(f"Unknown instruction: {instruction}")
+
         return True
 
 
-test_case = 3
+
+test_case = 1
 with open(f"inputs/test{test_case}.txt", "r") as f:
     instructions = f.readlines()
 
