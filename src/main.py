@@ -161,13 +161,13 @@ class MIPSPipeline:
             state += f"    {instruction} {stage}\n"
         self.stage_log.append(state)
 
-test_case = 6
+test_case = 8
 with open(f"inputs/test{test_case}.txt", "r") as f:
     instructions = f.readlines()
 
 pipeline = MIPSPipeline()
 cycles = pipeline.execute_pipeline(instructions)
-
+mem = [pipeline.memory[i] for i in range(len(pipeline.memory)) if i % 4 == 0]
 output_text = f"""
 Case {test_case}: 
 ## Each clocks
@@ -181,7 +181,7 @@ Final Register Values:
 Registers: {pipeline.registers}
 
 Final Memory Values:
-{pipeline.memory[:32]}
+{mem[:32]}
 """
 
 print(output_text)
