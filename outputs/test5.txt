@@ -16,36 +16,33 @@ beq $1  $2  2: ID
 add $2  $3  $3: IF
 Cycle 5
 sub $1  $4  $4: WB 10
-beq $1  $2  2: ID
-add $2  $3  $3: IF
-Cycle 6
 beq $1  $2  2: EX X0 100 0X
 add $2  $3  $3: ID
 lw $1  4($0): IF
-Cycle 7
+Cycle 6
 beq $1  $2  2: MEM 100 0X
 add $2  $3  $3: EX 10 000 10
 lw $1  4($0): ID
 add $4  $5  $6: IF
-Cycle 8
+Cycle 7
 beq $1  $2  2: WB 0X
 add $2  $3  $3: MEM 000 10
 lw $1  4($0): EX 01 010 11
 add $4  $5  $6: ID
-Cycle 9
+Cycle 8
 add $2  $3  $3: WB 10
 lw $1  4($0): MEM 010 11
 add $4  $5  $6: EX 10 000 10
-Cycle 10
+Cycle 9
 lw $1  4($0): WB 11
 add $4  $5  $6: MEM 000 10
-Cycle 11
+Cycle 10
 add $4  $5  $6: WB 10
 
 
 ## Final Result:
 
-Total Cycles: 11
+Total Cycles: 10
 
 Final Register Values:
 [0, 1, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
