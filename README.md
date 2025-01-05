@@ -31,9 +31,15 @@ Data hazard、Predict not taken: 企鵝
 
 ## 遭遇的問題
 
+
+
 ## 個人心得
 
 - 1
 - 2
-- 3
+- 
+### A1115531
+
+我寫這個壓力好大，好難寫，寫了這個才真的了解data hazard發生在哪? Forwarding是在哪裡。
+  
 - 4
