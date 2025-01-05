@@ -160,10 +160,14 @@ class MIPSPipeline:
         if op == "lw":
             rt = int(parts[1][1:])
             offset, base = map(int, parts[2].strip("()").split("($"))
-            self.registers[rt] = self.memory[self.registers[base] + offset]
+            # ★ 修正：將位址除以 4，才能對應 memory list 的索引
+            mem_address = (self.registers[base] + offset) // 4
+            self.registers[rt] = self.memory[mem_address]
+
         elif op == "sw":
             rt = int(parts[1][1:])
             offset, base = map(int, parts[2].strip("()").split("($"))
+            # 這邊原本就有 /4，保留即可
             mem_address = (self.registers[base] + offset) // 4
             self.memory[mem_address] = self.registers[rt]
         elif op == "add":
@@ -190,13 +194,20 @@ class MIPSPipeline:
         return True
 
 
-test_case = 2
+test_case = 3
 with open(f"inputs/test{test_case}.txt", "r") as f:
     instructions = f.readlines()
 
 pipeline = MIPSPipeline()
 cycles = pipeline.execute_pipeline(instructions)
-mem = [pipeline.memory[i] for i in range(len(pipeline.memory)) if i % 4 == 0]
+
+# Registers: 直接轉成字串即可
+registers_str = f"{pipeline.registers}"
+
+# Memory: 假設只顯示前 32 格
+mem_ary = pipeline.memory[:32]
+mem_str = f"{mem_ary}"
+
 output_text = f"""
 Case {test_case}: 
 ## Each clocks
@@ -207,13 +218,14 @@ Case {test_case}:
 Total Cycles: {cycles}
 
 Final Register Values:
-Registers: {pipeline.registers}
+{registers_str}
 
 Final Memory Values:
-{mem[:32]}
+{mem_str}
 """
 
 print(output_text)
 
 with open(f"outputs/test{test_case}.txt", "w") as f:
     f.write(output_text)
+
