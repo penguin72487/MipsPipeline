@@ -1,6 +1,72 @@
-add $1, $2, $3
-add $4, $1, $1
-sub $4, $4, $1
-beq $4, $1, -2
-add $4, $1, $4
-sw $4, 4($0)
+
+Case 4: 
+## Each clocks
+Cycle 1
+add $1  $2  $3: IF
+Cycle 2
+add $1  $2  $3: ID
+add $4  $1  $1: IF
+Cycle 3
+add $1  $2  $3: EX 10 000 10
+add $4  $1  $1: ID
+sub $4  $4  $1: IF
+Cycle 4
+add $1  $2  $3: MEM 000 10
+add $4  $1  $1: EX 10 000 10
+sub $4  $4  $1: ID
+beq $4  $1  -2: IF
+Cycle 5
+add $1  $2  $3: WB 10
+add $4  $1  $1: MEM 000 10
+sub $4  $4  $1: EX 10 000 10
+beq $4  $1  -2: ID
+add $4  $1  $4: IF
+Cycle 6
+add $4  $1  $1: WB 10
+sub $4  $4  $1: MEM 000 10
+beq $4  $1  -2: ID
+add $4  $1  $4: IF
+Cycle 7
+sub $4  $4  $1: WB 10
+beq $4  $1  -2: ID
+add $4  $1  $4: IF
+Cycle 8
+beq $4  $1  -2: EX X0 100 0X
+add $4  $1  $4: ID
+sw $4  4($0): IF
+Cycle 9
+beq $4  $1  -2: MEM 100 0X
+add $4  $1  $4: EX 10 000 10
+sw $4  4($0): ID
+add $4  $1  $4: IF
+Cycle 10
+beq $4  $1  -2: WB 0X
+add $4  $1  $4: MEM 000 10
+sw $4  4($0): EX X1 001 0X
+add $4  $1  $4: ID
+sw $4  4($0): IF
+Cycle 11
+add $4  $1  $4: WB 10
+sw $4  4($0): MEM 001 0X
+add $4  $1  $4: EX 10 000 10
+sw $4  4($0): ID
+Cycle 12
+sw $4  4($0): WB 0X
+add $4  $1  $4: MEM 000 10
+sw $4  4($0): EX X1 001 0X
+Cycle 13
+add $4  $1  $4: WB 10
+sw $4  4($0): MEM 001 0X
+Cycle 14
+sw $4  4($0): WB 0X
+
+
+## Final Result:
+
+Total Cycles: 14
+
+Final Register Values:
+[0, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+
+Final Memory Values:
+[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]

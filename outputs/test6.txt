@@ -1,40 +1,40 @@
 
 Case 6: 
 ## Each clocks
-Cycle 1: 
-    lw $8, 8($0) IF
-Cycle 2: 
-    lw $8, 8($0) ID
-    beq $4, $8, 1 IF
-Cycle 3: 
-    lw $8, 8($0) EX
-    beq $4, $8, 1 ID
-    sub $2, $7, $9 IF
-Cycle 4: 
-    lw $8, 8($0) MEM
-    beq $4, $8, 1 ID
-    sub $2, $7, $9 IF
-Cycle 5: 
-    lw $8, 8($0) WB
-    beq $4, $8, 1 ID
-    sub $2, $7, $9 IF
-Cycle 6: 
-    beq $4, $8, 1 EX
-    sub $2, $7, $9 ID
-    sw $2, 8($0) IF
-Cycle 7: 
-    beq $4, $8, 1 MEM
-    sub $2, $7, $9 EX
-    sw $2, 8($0) ID
-Cycle 8: 
-    beq $4, $8, 1 WB
-    sub $2, $7, $9 MEM
-    sw $2, 8($0) EX
-Cycle 9: 
-    sub $2, $7, $9 WB
-    sw $2, 8($0) MEM
-Cycle 10: 
-    sw $2, 8($0) WB
+Cycle 1
+lw $8  8($0): IF
+Cycle 2
+lw $8  8($0): ID
+beq $4  $8  1: IF
+Cycle 3
+lw $8  8($0): EX 01 010 11
+beq $4  $8  1: ID
+sub $2  $7  $9: IF
+Cycle 4
+lw $8  8($0): MEM 010 11
+beq $4  $8  1: ID
+sub $2  $7  $9: IF
+Cycle 5
+lw $8  8($0): WB 11
+beq $4  $8  1: ID
+sub $2  $7  $9: IF
+Cycle 6
+beq $4  $8  1: EX X0 100 0X
+sub $2  $7  $9: ID
+sw $2  8($0): IF
+Cycle 7
+beq $4  $8  1: MEM 100 0X
+sub $2  $7  $9: EX 10 000 10
+sw $2  8($0): ID
+Cycle 8
+beq $4  $8  1: WB 0X
+sub $2  $7  $9: MEM 000 10
+sw $2  8($0): EX X1 001 0X
+Cycle 9
+sub $2  $7  $9: WB 10
+sw $2  8($0): MEM 001 0X
+Cycle 10
+sw $2  8($0): WB 0X
 
 
 ## Final Result:
@@ -42,7 +42,7 @@ Cycle 10:
 Total Cycles: 10
 
 Final Register Values:
-Registers: [0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+[0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 
 Final Memory Values:
-[1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]

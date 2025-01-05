@@ -1,14 +1,42 @@
 
 Case 7: 
 ## Each clocks
+Cycle 1
+add $1 $1 $2: IF
+Cycle 2
+add $1 $1 $2: ID
+add $1 $1 $3: IF
+Cycle 3
+add $1 $1 $2: EX 10 000 10
+add $1 $1 $3: ID
+add $1 $1 $4: IF
+Cycle 4
+add $1 $1 $2: MEM 000 10
+add $1 $1 $3: EX 10 000 10
+add $1 $1 $4: ID
+sw $1  8($0): IF
+Cycle 5
+add $1 $1 $2: WB 10
+add $1 $1 $3: MEM 000 10
+add $1 $1 $4: EX 10 000 10
+sw $1  8($0): ID
+Cycle 6
+add $1 $1 $3: WB 10
+add $1 $1 $4: MEM 000 10
+sw $1  8($0): EX X1 001 0X
+Cycle 7
+add $1 $1 $4: WB 10
+sw $1  8($0): MEM 001 0X
+Cycle 8
+sw $1  8($0): WB 0X
 
 
 ## Final Result:
 
-Total Cycles: -1
+Total Cycles: 8
 
 Final Register Values:
-Registers: [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+[0, 4, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 
 Final Memory Values:
-[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+[1, 1, 4, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]

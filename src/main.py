@@ -35,8 +35,10 @@ class MIPSPipeline:
 
             # 加入新的指令到 pipeline
             if not self.stalled and self.pc < len(instructions):
-                instruction = instructions[self.pc].strip()
-                self.pipeline.append((instruction, "IF"))
+                # ★ 在這裡做「把逗號換成空白」再 split 的動作
+                raw_inst = instructions[self.pc].strip()
+                raw_inst = raw_inst.replace(",", " ")
+                self.pipeline.append((raw_inst, "IF"))
                 self.pc += 1
 
         return self.cycles
@@ -45,14 +47,12 @@ class MIPSPipeline:
         data_hazard = False
         stalled_by_beq = False  
 
-        # 逐一處理 pipeline 裡的指令
         for i in range(len(self.pipeline)):
             instruction, stage = self.pipeline[i]
 
             if stage == "IF":
                 if stalled_by_beq:
                     continue
-                # 改成檢查前面指令
                 if self.check_hazard(instruction, i):
                     data_hazard = True
                     continue
@@ -60,7 +60,6 @@ class MIPSPipeline:
                     self.pipeline[i] = (instruction, "ID")
 
             elif stage == "ID":
-                # 對 beq 做 stall
                 if "beq" in instruction:
                     if self.branch_stall_count < 2:
                         self.branch_stall_count += 1
@@ -90,7 +89,6 @@ class MIPSPipeline:
 
         # 移除執行完成 (DONE) 的指令
         self.pipeline = [(inst, stage) for inst, stage in self.pipeline if stage != "DONE"]
-        # 若本週期有資料 hazard，需要 stall
         self.stalled = data_hazard
 
     def check_hazard(self, instruction, idx):
@@ -98,45 +96,48 @@ class MIPSPipeline:
         只檢查 pipeline[:idx] (更前面的指令)，
         確認是否會造成對當前指令的 hazard。
         """
-        parts = instruction.replace(",", "").split()
+        # instruction 已經是沒有逗號的字串，如 "add $1 $1 $2"
+        parts = instruction.split()  # 這樣就能拿到 ["add", "$1", "$1", "$2"] (以 add 為例)
         op = parts[0]
         sources = []
         target = None
 
-        # 解析當前這條指令的 source 和 target
         if op in ["add", "sub"]:
-            target = int(parts[1][1:])
-            sources = [int(part[1:]) for part in parts[2:] if part.startswith("$")]
+            target = int(parts[1][1:])   # parts[1] 是 "$1"
+            # 例如 parts[2]="$1", parts[3]="$2"
+            sources = [int(p[1:]) for p in parts[2:] if p.startswith("$")]
         elif op == "lw":
-            target = int(parts[1][1:])
+            # lw $2, 8($0) -> 轉成 "lw $2 8($0)" -> parts = ["lw","$2","8($0)"]
+            rt = parts[1]  # "$2"
+            target = int(rt[1:])
             if "(" in parts[2]:
-                sources = [int(parts[2].split("(")[1][1:].strip(")"))]
+                # "8($0)" -> offset=8, base=$0
+                base_str = parts[2].split("(")[1].strip(")")
+                sources = [int(base_str[1:])]  # 取出 $0 -> 0
         elif op == "sw":
+            # sw $4, 24($0) -> "sw $4 24($0)" -> parts = ["sw","$4","24($0)"]
+            # sw 需要把 $4, $0 都當作 source
+            rt = parts[1]  # "$4"
             if "(" in parts[2]:
-                # sw $rt, offset($base)
-                # 會讀 rt(作為source) 以及 base(也是source)
-                sources = [int(parts[1][1:]), int(parts[2].split("(")[1][1:].strip(")"))]
+                base_str = parts[2].split("(")[1].strip(")")
+                sources = [int(rt[1:]), int(base_str[1:])]
 
         # 依序檢查「更前面的指令」是否會造成 hazard
         for j in range(idx):
             inst_j, stage_j = self.pipeline[j]
-            inst_j_parts = inst_j.replace(",", "").split()
+            # inst_j 已經是沒有逗號的字串
+            inst_j_parts = inst_j.split()
             inst_j_op = inst_j_parts[0]
             inst_j_target = None
 
             if inst_j_op in ["add", "sub", "lw"]:
                 inst_j_target = int(inst_j_parts[1][1:])
             
-            # 假設前面指令要寫入 inst_j_target，
-            # 而當前指令要讀 sources => hazard
             if inst_j_target and inst_j_target in sources:
-                # 依照典型 MIPS pipeline hazard 規則
                 if stage_j == "ID":
                     return True
-                # lw 在 EX 時尚未讀完記憶體 => 需要 forward or stall
                 if stage_j == "EX" and inst_j_op == "lw":
                     return True
-                # MEM, WB 中 => 資料已可 forward 或即將寫回 => 不 stall
                 if stage_j in ["MEM", "WB"]:
                     continue
         
@@ -161,7 +162,6 @@ class MIPSPipeline:
                 "WB": "10"          
             },
             "sub": {
-                # 你若需要 sub 也有控制訊號，可加在此處
                 "EX": "10 000 10",  
                 "MEM": "000 10",    
                 "WB": "10"          
@@ -189,28 +189,35 @@ class MIPSPipeline:
         self.stage_log.append(state)
 
     def execute_instruction(self, instruction):
-        parts = instruction.replace(",", "").strip().split()
+        # 這裡也要先切好 parts
+        parts = instruction.split()
         op = parts[0]
 
-        # 如果 branch_canceled 已為 True，直接 return True，但跳過任何寫入
-        # （不過 'beq' 自己還是要跑判定，所以要排除掉 beq）
         if self.branch_canceled and op not in ["beq"]:
-            # 依然 return True 讓 pipeline 繼續往下做 MEM, WB，但實際不改任何東西
             return True
 
         if op == "lw":
-            rt = int(parts[1][1:])
-            offset, base = map(int, parts[2].strip("()").split("($"))
-            mem_address = (self.registers[base] + offset) // 4
-            self.registers[rt] = self.memory[mem_address]
+            # parts = ["lw","$2","8($0)"]
+            rt = parts[1]       # "$2"
+            offset_base = parts[2]  # "8($0)"
+            offset_str, base_str = offset_base.split("(")
+            offset = int(offset_str)
+            base_reg = int(base_str.strip(")")[1:])
+            mem_address = (self.registers[base_reg] + offset) // 4
+            self.registers[int(rt[1:])] = self.memory[mem_address]
 
         elif op == "sw":
-            rt = int(parts[1][1:])
-            offset, base = map(int, parts[2].strip("()").split("($"))
-            mem_address = (self.registers[base] + offset) // 4
-            self.memory[mem_address] = self.registers[rt]
+            # parts = ["sw","$4","24($0)"]
+            rt = parts[1]       # "$4"
+            offset_base = parts[2]  # "24($0)"
+            offset_str, base_str = offset_base.split("(")
+            offset = int(offset_str)
+            base_reg = int(base_str.strip(")")[1:])
+            mem_address = (self.registers[base_reg] + offset) // 4
+            self.memory[mem_address] = self.registers[int(rt[1:])]
 
         elif op == "add":
+            # parts = ["add","$1","$1","$2"]
             rd = int(parts[1][1:])
             rs = int(parts[2][1:])
             rt = int(parts[3][1:])
@@ -225,13 +232,13 @@ class MIPSPipeline:
                 self.registers[rd] = self.registers[rs] - self.registers[rt]
 
         elif op == "beq":
+            # parts = ["beq","$4","$4","1"]
             rs = int(parts[1][1:])
             rt = int(parts[2][1:])
             offset = int(parts[3])
             if self.registers[rs] == self.registers[rt]:
                 self.branch_taken = True
                 self.branch_pc = self.pc + offset
-                # ★ 這裡設 branch_canceled
                 self.branch_canceled = True
         else:
             raise ValueError(f"Unknown instruction: {instruction}")
@@ -239,18 +246,15 @@ class MIPSPipeline:
         return True
 
 
-# 下面是執行並輸出結果的程式片段 (維持原樣，只是略做註解)
-test_case = 1
+# ------------------ 以下是 main 的執行與輸出 ------------------ 
+test_case = 4
 with open(f"inputs/test{test_case}.txt", "r") as f:
     instructions = f.readlines()
 
 pipeline = MIPSPipeline()
 cycles = pipeline.execute_pipeline(instructions)
 
-# Registers: 直接轉成字串即可
 registers_str = f"{pipeline.registers}"
-
-# Memory: 假設只顯示前 32 格
 mem_ary = pipeline.memory[:32]
 mem_str = f"{mem_ary}"
 
