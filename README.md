@@ -1,42 +1,22 @@
-# MipsPipeline
+# 計算機組織期末專題
 MipsPipeline
 
 
+## 環境設置
+- Python 3.12.1
 
-# 環境設置
-
-## 必須安裝的軟體與工具
-### Runtime
-   ...
-
-### Package Manager
-   ...
-
-### 依賴項 (含安裝建置指令等等)
-   ...
+## 執行步驟
+- 將input 資料放入 src 中 命名為 test{ID}.txt
+- 在 main.py Line 336 修改 ID
+- cd src
+- python main.py
+- 將輸出在 src 中的 test{ID}.txt
 
 ---
+# 專案報告
+## 工作分配
 
-## 編譯與執行步驟
+## 遭遇的問題
 
-### 編譯指令 (看需要)
-...
+## 個人心得
 
-### 執行指令 (若需要而外 args，請提供用法等)
-...
-
----
-
-## 範例執行
-
-1. 假設 `inputs/test1.txt` 是需要處理的輸入文件，並且程式的預期是將結果寫入 `outputs/test1.txt`：
-
-   ```bash
-   ./SampleProgram --input inputs/test1.txt--output outputs/test1.txt
-   ```
-   之類的
-
----
-
-## 輸出檔案格式與說明  (與 PPT 相同則不必提供)
-...
