@@ -328,6 +328,5 @@ Final Memory Values:
 """
 
 print(output_text)
-
-with open(f"outputs/test{test_case}.txt", "w") as f:
+with open(os.path.join(os.path.dirname(os.path.dirname(__file__)), f"outputs/test{test_case}.txt"), 'w') as f:
     f.write(output_text)
