@@ -1,0 +1,55 @@
+
+Case 8: 
+## Each clocks
+Cycle 0
+Cycle 1
+lw $4, 8($0): IF
+Cycle 2
+lw $4, 8($0): ID
+beq $4, $4, 1: IF
+Cycle 3
+lw $4, 8($0): EX 01 010 11
+beq $4, $4, 1: ID
+add $4, $4, $4: IF
+Cycle 4
+lw $4, 8($0): MEM 010 11
+beq $4, $4, 1: ID
+add $4, $4, $4: IF
+Cycle 5
+lw $4, 8($0): WB 11
+beq $4, $4, 1: ID
+add $4, $4, $4: IF
+Cycle 6
+beq $4, $4, 1: EX X0 100 0X
+add $4, $4, $4: ID
+sub $4, $4, $4: IF
+Cycle 7
+beq $4, $4, 1: MEM 100 0X
+add $4, $4, $4: EX 10 000 10
+sub $4, $4, $4: ID
+sw $4, 8($0): IF
+Cycle 8
+beq $4, $4, 1: WB 0X
+add $4, $4, $4: MEM 000 10
+sub $4, $4, $4: EX 10 000 10
+sw $4, 8($0): ID
+Cycle 9
+add $4, $4, $4: WB 10
+sub $4, $4, $4: MEM 000 10
+sw $4, 8($0): EX X1 001 0X
+Cycle 10
+sub $4, $4, $4: WB 10
+sw $4, 8($0): MEM 001 0X
+Cycle 11
+sw $4, 8($0): WB 0X
+
+
+## Final Result:
+
+Total Cycles: 11
+
+Final Register Values:
+[0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+
+Final Memory Values:
+[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]

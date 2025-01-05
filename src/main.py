@@ -16,6 +16,12 @@ class MIPSPipeline:
     def execute_pipeline(self, instructions):
         while self.pc < len(instructions) or len(self.pipeline) > 0:
             self.cycles += 1
+
+            # debug print
+            print(f"[DEBUG] cycle={self.cycles}, pc={self.pc}, pipeline={self.pipeline}, "
+                  f"branch_taken={self.branch_taken}, branch_pc={self.branch_pc}, "
+                  f"stall_count={self.branch_stall_count}")
+            
             self.log_pipeline_state()
 
             # 處理 pipeline
@@ -39,19 +45,22 @@ class MIPSPipeline:
         data_hazard = False
         stalled_by_beq = False  
 
+        # 逐一處理 pipeline 裡的指令
         for i in range(len(self.pipeline)):
             instruction, stage = self.pipeline[i]
 
             if stage == "IF":
                 if stalled_by_beq:
                     continue
-                if self.check_hazard(instruction):
+                # 改成檢查前面指令
+                if self.check_hazard(instruction, i):
                     data_hazard = True
                     continue
                 else:
                     self.pipeline[i] = (instruction, "ID")
 
             elif stage == "ID":
+                # 對 beq 做 stall
                 if "beq" in instruction:
                     if self.branch_stall_count < 2:
                         self.branch_stall_count += 1
@@ -61,7 +70,7 @@ class MIPSPipeline:
                     else:
                         self.branch_stall_count = 0
 
-                if self.check_hazard(instruction):
+                if self.check_hazard(instruction, i):
                     data_hazard = True
                     continue
                 else:
@@ -79,15 +88,22 @@ class MIPSPipeline:
                     self.branch_pc = self.pc
                 self.pipeline[i] = (instruction, "DONE")
 
+        # 移除執行完成 (DONE) 的指令
         self.pipeline = [(inst, stage) for inst, stage in self.pipeline if stage != "DONE"]
+        # 若本週期有資料 hazard，需要 stall
         self.stalled = data_hazard
 
-    def check_hazard(self, instruction):
+    def check_hazard(self, instruction, idx):
+        """
+        只檢查 pipeline[:idx] (更前面的指令)，
+        確認是否會造成對當前指令的 hazard。
+        """
         parts = instruction.replace(",", "").split()
         op = parts[0]
         sources = []
         target = None
 
+        # 解析當前這條指令的 source 和 target
         if op in ["add", "sub"]:
             target = int(parts[1][1:])
             sources = [int(part[1:]) for part in parts[2:] if part.startswith("$")]
@@ -97,24 +113,33 @@ class MIPSPipeline:
                 sources = [int(parts[2].split("(")[1][1:].strip(")"))]
         elif op == "sw":
             if "(" in parts[2]:
+                # sw $rt, offset($base)
+                # 會讀 rt(作為source) 以及 base(也是source)
                 sources = [int(parts[1][1:]), int(parts[2].split("(")[1][1:].strip(")"))]
 
-        for inst, stage in self.pipeline:
-            inst_parts = inst.replace(",", "").split()
-            inst_op = inst_parts[0]
-            inst_target = None
+        # 依序檢查「更前面的指令」是否會造成 hazard
+        for j in range(idx):
+            inst_j, stage_j = self.pipeline[j]
+            inst_j_parts = inst_j.replace(",", "").split()
+            inst_j_op = inst_j_parts[0]
+            inst_j_target = None
 
-            if inst_op in ["add", "sub", "lw"]:
-                inst_target = int(inst_parts[1][1:])
-
-            if inst_target and inst_target in sources:
-                if stage == "ID":
+            if inst_j_op in ["add", "sub", "lw"]:
+                inst_j_target = int(inst_j_parts[1][1:])
+            
+            # 假設前面指令要寫入 inst_j_target，
+            # 而當前指令要讀 sources => hazard
+            if inst_j_target and inst_j_target in sources:
+                # 依照典型 MIPS pipeline hazard 規則
+                if stage_j == "ID":
                     return True
-                if stage == "EX" and inst_op == "lw":
+                # lw 在 EX 時尚未讀完記憶體 => 需要 forward or stall
+                if stage_j == "EX" and inst_j_op == "lw":
                     return True
-                if stage in ["MEM", "WB"]:
+                # MEM, WB 中 => 資料已可 forward 或即將寫回 => 不 stall
+                if stage_j in ["MEM", "WB"]:
                     continue
-
+        
         return False
 
     def get_signal(self, stage, instruction):
@@ -135,6 +160,12 @@ class MIPSPipeline:
                 "MEM": "000 10",    
                 "WB": "10"          
             },
+            "sub": {
+                # 你若需要 sub 也有控制訊號，可加在此處
+                "EX": "10 000 10",  
+                "MEM": "000 10",    
+                "WB": "10"          
+            },
             "beq": {
                 "EX": "X0 100 0X",  
                 "MEM": "100 0X",    
@@ -142,18 +173,20 @@ class MIPSPipeline:
             }
         }
         return signal_format.get(op, {}).get(stage, "")
-
-
+    
     def log_pipeline_state(self):
+        # 當 cycle == 0 時，直接不做任何紀錄
+        if self.cycles == 0:
+            return
+
         state = f"Cycle {self.cycles}\n"
         for instruction, stage in self.pipeline:
             signal = self.get_signal(stage, instruction)
-            if stage in ["EX", "MEM", "WB"]:  
+            if stage in ["EX", "MEM", "WB"]:
                 state += f"{instruction}: {stage} {signal}\n"
             else:
                 state += f"{instruction}: {stage}\n"
         self.stage_log.append(state)
-
 
     def execute_instruction(self, instruction):
         parts = instruction.replace(",", "").strip().split()
@@ -206,7 +239,7 @@ class MIPSPipeline:
         return True
 
 
-
+# 下面是執行並輸出結果的程式片段 (維持原樣，只是略做註解)
 test_case = 1
 with open(f"inputs/test{test_case}.txt", "r") as f:
     instructions = f.readlines()
@@ -241,4 +274,3 @@ print(output_text)
 
 with open(f"outputs/test{test_case}.txt", "w") as f:
     f.write(output_text)
-
