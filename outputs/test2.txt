@@ -1,6 +1,7 @@
 
 Case 2: 
 ## Each clocks
+<<<<<<< HEAD
 Cycle 0
 Cycle 1
 lw $2, 8($0): IF
@@ -32,6 +33,38 @@ add $4, $2, $3: WB 10
 sw $4, 24($0): MEM 001 0X
 Cycle 9
 sw $4, 24($0): WB 0X
+=======
+Cycle 1: 
+    lw $2, 8($0) IF
+Cycle 2: 
+    lw $2, 8($0) ID
+    lw $3, 16($0) IF
+Cycle 3: 
+    lw $2, 8($0) EX
+    lw $3, 16($0) ID
+    add $4, $2, $3 IF
+Cycle 4: 
+    lw $2, 8($0) MEM
+    lw $3, 16($0) EX
+    add $4, $2, $3 IF
+Cycle 5: 
+    lw $2, 8($0) WB
+    lw $3, 16($0) MEM
+    add $4, $2, $3 ID
+    sw $4, 24($0) IF
+Cycle 6: 
+    lw $3, 16($0) WB
+    add $4, $2, $3 EX
+    sw $4, 24($0) ID
+Cycle 7: 
+    add $4, $2, $3 MEM
+    sw $4, 24($0) EX
+Cycle 8: 
+    add $4, $2, $3 WB
+    sw $4, 24($0) MEM
+Cycle 9: 
+    sw $4, 24($0) WB
+>>>>>>> 15c1e4a812f643be0c6ac4d33d65992ef3203938
 
 
 ## Final Result:

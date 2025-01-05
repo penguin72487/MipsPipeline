@@ -1,4 +1,48 @@
-lw $8, 8($0)
-beq $4, $8, 1
-sub $2, $7, $9
-sw $2, 8($0)
+
+Case 6: 
+## Each clocks
+Cycle 1: 
+    lw $8, 8($0) IF
+Cycle 2: 
+    lw $8, 8($0) ID
+    beq $4, $8, 1 IF
+Cycle 3: 
+    lw $8, 8($0) EX
+    beq $4, $8, 1 ID
+    sub $2, $7, $9 IF
+Cycle 4: 
+    lw $8, 8($0) MEM
+    beq $4, $8, 1 ID
+    sub $2, $7, $9 IF
+Cycle 5: 
+    lw $8, 8($0) WB
+    beq $4, $8, 1 ID
+    sub $2, $7, $9 IF
+Cycle 6: 
+    beq $4, $8, 1 EX
+    sub $2, $7, $9 ID
+    sw $2, 8($0) IF
+Cycle 7: 
+    beq $4, $8, 1 MEM
+    sub $2, $7, $9 EX
+    sw $2, 8($0) ID
+Cycle 8: 
+    beq $4, $8, 1 WB
+    sub $2, $7, $9 MEM
+    sw $2, 8($0) EX
+Cycle 9: 
+    sub $2, $7, $9 WB
+    sw $2, 8($0) MEM
+Cycle 10: 
+    sw $2, 8($0) WB
+
+
+## Final Result:
+
+Total Cycles: 10
+
+Final Register Values:
+Registers: [0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+
+Final Memory Values:
+[1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
