@@ -1,3 +1,4 @@
+import os
 class MIPSPipeline:
     def __init__(self):
         self.registers = [1] * 32
@@ -299,7 +300,8 @@ class MIPSPipeline:
 
 # ------------------ 以下是 main 的執行與輸出 ------------------ 
 test_case = 4
-with open(f"inputs/test{test_case}.txt", "r") as f:
+
+with open(os.path.join(os.path.dirname(os.path.dirname(__file__)), f"inputs/test{test_case}.txt"), 'r') as f:
     instructions = f.readlines()
 
 pipeline = MIPSPipeline()
