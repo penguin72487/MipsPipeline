@@ -24,10 +24,10 @@ py src\main.py
 
 ## 工作分配
 
-  劉沛辰(西瓜)：處理 pipeline、stall、forwarding
-  劉柏均(SiroKu1006)：處理輸入、輸出、測試檢查是否符合預期
-  錢昱名(企鵝)：處理 data hazard、Predict not taken
-  朱俊傑(Jaxx)：收尾檢查 bug 丶代碼格式美化
+劉沛辰(西瓜)：基礎MIPS實現，處理 pipeline、stall、forwarding
+劉柏均(SiroKu1006)：處理輸入、輸出、測試檢查是否符合預期
+錢昱名(企鵝)：處理 data hazard、Predict not taken
+朱俊傑(Jaxx)：收尾檢查 bug 丶代碼格式美化
 
 ## 遭遇的問題
 
@@ -35,6 +35,10 @@ py src\main.py
 2. Forwarding 還要細分成 beq 和其他的 Forwarding，beq 要在 ID 階段進行並慢一個 cycle，很常實作出一個功能後前面的測資就壞掉了。
 3. beq 和 lw 的 stall，有時候條件成立了但是就是不跳轉，或是直接忽略了 data hazard，尤其是 test3 的 lw 和 beq 要進行兩個 stall 卡最久，因為 lw 特別的要在 mem 才獲取資料，和 beq 需要提前在 id 進行計算。
 4. beq 無限迴圈的問題，因為 pipeline 要在各個階段傳遞，然後做完基礎的 pipeline 後為了時做 stall 或是 beq 造成無限迴圈，beq 直接卡在 ID 階段然後卡死。
+
+## 生成式 AI 運用方式
+
+告訴他想實現的詳細邏輯，像是:我想要把 BEQ 的跳轉判斷邏輯在 ID 實現，可以產生大致架構嗎，然後我們再進行理解和處理，把整個專案拆分成小部分慢慢實現，還有遇到 bug 時可以問他看能不能處理，像是前面有提到的 beq 無限迴圈卡很久也是請他幫我解決的。
 
 ## 個人心得
 
@@ -48,6 +52,6 @@ A1115513 劉沛辰(peipei930725):這專題真的很恐怖，瘋狂 debug，原�
 
 ### A1115531 錢昱名(penguin72487)
 
-我寫這個壓力好大，好難寫，寫了這個才真的了解data hazard發生在哪? Forwarding是在哪裡。
-  
-### A1115532 
+我寫這個壓力好大，好難寫，寫了這個才真的了解 data hazard 發生在哪? Forwarding 是在哪裡。
+
+### A1115532
