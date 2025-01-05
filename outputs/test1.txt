@@ -2,33 +2,33 @@
 Case 1: 
 ## Each clocks
 Cycle 1
-lw $2, 8($0): IF
+lw $2  8($0): IF
 Cycle 2
-lw $2, 8($0): ID
-lw $3, 16($0): IF
+lw $2  8($0): ID
+lw $3  16($0): IF
 Cycle 3
-lw $2, 8($0): EX 01 010 11
-lw $3, 16($0): ID
-add $6, $4, $5: IF
+lw $2  8($0): EX 01 010 11
+lw $3  16($0): ID
+add $6  $4  $5: IF
 Cycle 4
-lw $2, 8($0): MEM 010 11
-lw $3, 16($0): EX 01 010 11
-add $6, $4, $5: ID
-sw $6, 24($0): IF
+lw $2  8($0): MEM 010 11
+lw $3  16($0): EX 01 010 11
+add $6  $4  $5: ID
+sw $6  24($0): IF
 Cycle 5
-lw $2, 8($0): WB 11
-lw $3, 16($0): MEM 010 11
-add $6, $4, $5: EX 10 000 10
-sw $6, 24($0): ID
+lw $2  8($0): WB 11
+lw $3  16($0): MEM 010 11
+add $6  $4  $5: EX 10 000 10
+sw $6  24($0): ID
 Cycle 6
-lw $3, 16($0): WB 11
-add $6, $4, $5: MEM 000 10
-sw $6, 24($0): EX X1 001 0X
+lw $3  16($0): WB 11
+add $6  $4  $5: MEM 000 10
+sw $6  24($0): EX X1 001 0X
 Cycle 7
-add $6, $4, $5: WB 10
-sw $6, 24($0): MEM 001 0X
+add $6  $4  $5: WB 10
+sw $6  24($0): MEM 001 0X
 Cycle 8
-sw $6, 24($0): WB 0X
+sw $6  24($0): WB 0X
 
 
 ## Final Result:

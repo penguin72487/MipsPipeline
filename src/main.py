@@ -7,11 +7,11 @@ class MIPSPipeline:
         self.cycles = -1
         self.stage_log = []  # 用於記錄每個週期的 pipeline 狀態
         self.stalled = False  # 是否因為 hazard 停滯
-        self.branch_taken = False  # `beq` 是否成立
-        self.branch_pc = None  # `beq` 在 WB 階段才改變 `PC`
-        self.branch_canceled = False  # 一開始是 False，如果 `beq` 成立，則改為 True
-        self.branch_stall_count = 0  # `beq` 的 `ID` 階段需要 stall 兩次
-        self.registers[0] = 0  # `$zero` 永遠為 0
+        self.branch_taken = False  # beq 是否成立
+        self.branch_pc = None  # beq 在 WB 階段才改變 PC
+        self.branch_canceled = False  # 一開始是 False，如果 beq 成立，則改為 True
+        self.branch_stall_count = 0  # beq 的 ID 階段需要 stall 兩次
+        self.registers[0] = 0  # $zero 永遠為 0
 
     def execute_pipeline(self, instructions):
         while self.pc < len(instructions) or len(self.pipeline) > 0:
@@ -28,7 +28,7 @@ class MIPSPipeline:
             if self.pipeline:
                 self.process_pipeline()
 
-            # ✅ `beq` 在 `WB` 階段影響 `PC`，但不清空 pipeline
+            # ✅ beq 在 WB 階段影響 PC，但不清空 pipeline
             if self.branch_taken and self.branch_pc is not None:
                 self.pc = self.branch_pc
                 self.branch_taken = False
@@ -42,98 +42,54 @@ class MIPSPipeline:
                 self.pc += 1
 
         return self.cycles
-    
-    def parse_beq(self, instruction):
-        parts = instruction.replace(",", "").split()
-        rs = int(parts[1][1:])  # `$rs`
-        rt = int(parts[2][1:])  # `$rt`
-        offset = int(parts[3])   # `offset`
-        return rs, rt, offset
-    
-    def depends_on_lw(self, reg):
-        """檢查 pipeline 是否有 `lw` 會影響這個 `reg`"""
-        for inst, stage in self.pipeline:
-            parts = inst.split()
-            if parts[0] == "lw":
-                target = int(parts[1][1:])  # 目標暫存器
-                if target == reg and stage in ["EX", "MEM"]:  # ✅ 只考慮 `EX` 和 `MEM`
-                    return True
-        return False
 
     def process_pipeline(self):
         data_hazard = False
         stalled_by_beq = False  
-        beq_waiting_cycles = {}  # 追蹤 `beq` 是否在 `ID` 等待
-
-        new_pipeline = []  # 存放新 pipeline 階段
 
         for i in range(len(self.pipeline)):
             instruction, stage = self.pipeline[i]
 
             if stage == "IF":
-                if stalled_by_beq or any(beq_waiting_cycles.values()):
+                if stalled_by_beq:
                     continue
                 if self.check_hazard(instruction, i):
                     data_hazard = True
                     continue
                 else:
-                    new_pipeline.append((instruction, "ID"))
+                    self.pipeline[i] = (instruction, "ID")
 
             elif stage == "ID":
                 if "beq" in instruction:
-                    rs, rt, offset = self.parse_beq(instruction)
-
-                    # ✅ **如果 `beq` 依賴 `lw`，則等待 `MEM` 階段取值**
-                    if self.depends_on_lw(rs) or self.depends_on_lw(rt):
+                    if self.branch_stall_count < 2:
+                        self.branch_stall_count += 1
                         data_hazard = True
-                        beq_waiting_cycles[instruction] = 1  # **標記 `beq` 在 `ID` 等待**
-                        new_pipeline.append((instruction, "ID"))
-                        continue  
-
-                    # ✅ **確保 `beq` 只等待 `1 cycle` 在 `ID`**
-                    if instruction in beq_waiting_cycles:
-                        if beq_waiting_cycles[instruction] > 0:
-                            beq_waiting_cycles[instruction] -= 1
-                            new_pipeline.append((instruction, "ID"))
-                            continue
-                        else:
-                            del beq_waiting_cycles[instruction]  # **移除等待計數**
-                            new_pipeline.append((instruction, "EX"))
-                    else:
-                        beq_waiting_cycles[instruction] = 1  # **標記 `beq` 需要 `1 cycle` 等待**
-                        new_pipeline.append((instruction, "ID"))
-
-                else:
-                    if self.check_hazard(instruction, i):
-                        data_hazard = True
+                        stalled_by_beq = True
                         continue
                     else:
-                        new_pipeline.append((instruction, "EX"))
+                        self.branch_stall_count = 0
+
+                if self.check_hazard(instruction, i):
+                    data_hazard = True
+                    continue
+                else:
+                    self.pipeline[i] = (instruction, "EX")
 
             elif stage == "EX":
-                if "beq" in instruction:
-                    rs, rt, offset = self.parse_beq(instruction)
-                    if self.registers[rs] == self.registers[rt]:
-                        self.branch_taken = True
-                        self.branch_pc = self.pc + offset
-                        self.branch_canceled = True
-                new_pipeline.append((instruction, "MEM"))
+                if self.execute_instruction(instruction):
+                    self.pipeline[i] = (instruction, "MEM")
 
             elif stage == "MEM":
-                new_pipeline.append((instruction, "WB"))
+                self.pipeline[i] = (instruction, "WB")
 
             elif stage == "WB":
-                new_pipeline.append((instruction, "DONE"))
+                if "beq" in instruction and self.branch_taken:
+                    self.branch_pc = self.pc
+                self.pipeline[i] = (instruction, "DONE")
 
-        # ✅ **確保 `beq` 在 `EX` 判斷後才修改 `PC`**
-        if self.branch_taken:
-            self.pc = self.branch_pc
-            self.branch_taken = False
-
-        # ✅ **更新 pipeline**
-        self.pipeline = [inst for inst in new_pipeline if inst[1] != "DONE"]
+        # 移除執行完成 (DONE) 的指令
+        self.pipeline = [(inst, stage) for inst, stage in self.pipeline if stage != "DONE"]
         self.stalled = data_hazard
-
 
     def check_hazard(self, instruction, idx):
         """
@@ -217,7 +173,7 @@ class MIPSPipeline:
             }
         }
         return signal_format.get(op, {}).get(stage, "")
-
+    
     def log_pipeline_state(self):
         # 當 cycle == 0 時，直接不做任何紀錄
         if self.cycles == 0:
@@ -232,11 +188,8 @@ class MIPSPipeline:
                 state += f"{instruction}: {stage}\n"
         self.stage_log.append(state)
 
-    def execute_instruction(self, instruction, stage="WB"):
-        """
-        在 EX / MEM / WB 階段執行指令。
-        `stage`: "EX" / "MEM" / "WB"，預設是 WB
-        """
+    def execute_instruction(self, instruction):
+        # 這裡也要先切好 parts
         parts = instruction.split()
         op = parts[0]
 
@@ -244,53 +197,53 @@ class MIPSPipeline:
             return True
 
         if op == "lw":
-            rt = int(parts[1][1:])
+            # parts = ["lw","$2","8($0)"]
+            rt = parts[1]       # "$2"
             offset_base = parts[2]  # "8($0)"
             offset_str, base_str = offset_base.split("(")
             offset = int(offset_str)
             base_reg = int(base_str.strip(")")[1:])
             mem_address = (self.registers[base_reg] + offset) // 4
-            if stage == "WB":  # ✅ 只在 WB 階段執行寫入寄存器
-                self.registers[rt] = self.memory[mem_address]
+            self.registers[int(rt[1:])] = self.memory[mem_address]
 
         elif op == "sw":
-            rt = int(parts[1][1:])
+            # parts = ["sw","$4","24($0)"]
+            rt = parts[1]       # "$4"
             offset_base = parts[2]  # "24($0)"
             offset_str, base_str = offset_base.split("(")
             offset = int(offset_str)
             base_reg = int(base_str.strip(")")[1:])
             mem_address = (self.registers[base_reg] + offset) // 4
-            if stage == "MEM":  # ✅ 只在 MEM 階段執行寫入記憶體
-                self.memory[mem_address] = self.registers[rt]
+            self.memory[mem_address] = self.registers[int(rt[1:])]
 
         elif op == "add":
+            # parts = ["add","$1","$1","$2"]
             rd = int(parts[1][1:])
             rs = int(parts[2][1:])
             rt = int(parts[3][1:])
-            if stage == "WB" and not self.branch_taken:
+            if not self.branch_taken:
                 self.registers[rd] = self.registers[rs] + self.registers[rt]
 
         elif op == "sub":
             rd = int(parts[1][1:])
             rs = int(parts[2][1:])
             rt = int(parts[3][1:])
-            if stage == "WB" and not self.branch_taken:
+            if not self.branch_taken:
                 self.registers[rd] = self.registers[rs] - self.registers[rt]
 
         elif op == "beq":
-            if stage == "EX":  # ✅ **確保 `beq` 只會在 `EX` 判斷**
-                rs = int(parts[1][1:])
-                rt = int(parts[2][1:])
-                offset = int(parts[3])
-                if self.registers[rs] == self.registers[rt]:
-                    self.branch_taken = True
-                    self.branch_pc = self.pc + offset
+            # parts = ["beq","$4","$4","1"]
+            rs = int(parts[1][1:])
+            rt = int(parts[2][1:])
+            offset = int(parts[3])
+            if self.registers[rs] == self.registers[rt]:
+                self.branch_taken = True
+                self.branch_pc = self.pc + offset
+                self.branch_canceled = True
         else:
             raise ValueError(f"Unknown instruction: {instruction}")
 
         return True
-
-
 
 
 # ------------------ 以下是 main 的執行與輸出 ------------------ 
