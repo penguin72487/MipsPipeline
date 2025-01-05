@@ -2,6 +2,8 @@
 
 MipsPipeline
 
+組別:13
+
 ## 環境設置
 
 - Python 3.12.1
@@ -24,7 +26,7 @@ py src\main.py
 
 ## 工作分配
 
-劉沛辰(西瓜)：基礎MIPS實現，處理 pipeline、stall、forwarding
+劉沛辰(西瓜)：基礎 MIPS 實現，處理 pipeline、stall、forwarding
 劉柏均(SiroKu1006)：處理輸入、輸出、測試檢查是否符合預期
 錢昱名(企鵝)：處理 data hazard、Predict not taken
 朱俊傑(Jaxx)：收尾檢查 bug 丶代碼格式美化
@@ -46,7 +48,7 @@ py src\main.py
 
 A1115513 劉沛辰(peipei930725):這專題真的很恐怖，瘋狂 debug，原先以為就是模擬一個 MIPS 有多難，以為就是簡單的有限狀態機的實作，但是 stall 和 forwarding 產生的蝴蝶效應讓我卡超級久，一個 stall 會影響到所有的 instructions，然後還要注意有沒有 data hazard，還有 beq 和,lw 的狀態處理，雖然很難寫，遇到的問題很多，也很謝謝 gpt 和組員的幫忙，不然我會寫到崩潰。
 
-### 1115530 劉柏均(SiroKu1006)
+### A1115530 劉柏均(SiroKu1006)
 
 這次專題讓我體驗到 MIPS 的可怕之處，搞了一個下午只弄好一個簡單的小功能，為了修 data hazard 花了很多時間，最後還是靠我的組員把他修好，我好愛他。
 
