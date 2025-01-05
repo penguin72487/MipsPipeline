@@ -29,6 +29,16 @@ py src\main.py
 Pipline、stall、forwarding: 西瓜
 Data hazard、Predict not taken: 企鵝
 
+- 1
+- 2
+- 3
+- 4
+
+
 ## 遭遇的問題
 
 ## 個人心得
+- 1
+- 2
+- 3
+- 4
