@@ -21,12 +21,10 @@ class MIPSPipeline:
             if self.pipeline:
                 self.process_pipeline()
 
-            # ✅ 確保 `beq` 影響 `PC` 但不清空 pipeline
+            # ✅ `beq` 在 `WB` 階段影響 `PC`，但不清空 pipeline
             if self.branch_taken and self.branch_pc is not None:
                 self.pc = self.branch_pc
-                self.branch_taken = False  # 讓 branch 在 `WB` 階段影響 PC
-                # ❌ 不能清空 pipeline，不然其他指令會消失
-                # self.pipeline.clear()
+                self.branch_taken = False
 
             # 加入新的指令到 pipeline
             if not self.stalled and self.pc < len(instructions):
@@ -38,13 +36,12 @@ class MIPSPipeline:
 
     def process_pipeline(self):
         data_hazard = False
-        stalled_by_beq = False  # 追蹤 `beq` 是否正在 `stall`
+        stalled_by_beq = False  
 
         for i in range(len(self.pipeline)):
             instruction, stage = self.pipeline[i]
 
             if stage == "IF":
-                # ✅ 如果 `beq` 還在 `ID`，阻止新的指令進入 `ID`
                 if stalled_by_beq:
                     continue
                 if self.check_hazard(instruction):
@@ -55,14 +52,13 @@ class MIPSPipeline:
 
             elif stage == "ID":
                 if "beq" in instruction:
-                    # ✅ `beq` 在 `ID` 階段 `stall` 兩次，阻止 `add` 進入 `ID`
                     if self.branch_stall_count < 2:
                         self.branch_stall_count += 1
                         data_hazard = True
-                        stalled_by_beq = True  # 阻止 `add` 進入 `ID`
+                        stalled_by_beq = True
                         continue
                     else:
-                        self.branch_stall_count = 0  # 完成 `stall` 兩次後繼續執行
+                        self.branch_stall_count = 0
 
                 if self.check_hazard(instruction):
                     data_hazard = True
@@ -79,12 +75,11 @@ class MIPSPipeline:
 
             elif stage == "WB":
                 if "beq" in instruction and self.branch_taken:
-                    self.branch_pc = self.pc  # ✅ 在 WB 階段才真正跳轉
+                    self.branch_pc = self.pc
                 self.pipeline[i] = (instruction, "DONE")
 
         self.pipeline = [(inst, stage) for inst, stage in self.pipeline if stage != "DONE"]
         self.stalled = data_hazard
-
 
     def check_hazard(self, instruction):
         parts = instruction.replace(",", "").split()
@@ -121,6 +116,44 @@ class MIPSPipeline:
 
         return False
 
+    def get_signal(self, stage, instruction):
+        op = instruction.split()[0]
+        signal_format = {
+            "lw": {
+                "EX": "01 010 11",  
+                "MEM": "010 11",    
+                "WB": "11"          
+            },
+            "sw": {
+                "EX": "X1 001 0X",  
+                "MEM": "001 0X",    
+                "WB": "0X"          
+            },
+            "add": {
+                "EX": "10 000 10",  
+                "MEM": "000 10",    
+                "WB": "10"          
+            },
+            "beq": {
+                "EX": "X0 100 0X",  
+                "MEM": "100 0X",    
+                "WB": "0X"          
+            }
+        }
+        return signal_format.get(op, {}).get(stage, "")
+
+
+    def log_pipeline_state(self):
+        state = f"Cycle {self.cycles}\n"
+        for instruction, stage in self.pipeline:
+            signal = self.get_signal(stage, instruction)
+            if stage in ["EX", "MEM", "WB"]:  
+                state += f"{instruction}: {stage} {signal}\n"
+            else:
+                state += f"{instruction}: {stage}\n"
+        self.stage_log.append(state)
+
+
     def execute_instruction(self, instruction):
         parts = instruction.replace(",", "").strip().split()
         op = parts[0]
@@ -131,35 +164,33 @@ class MIPSPipeline:
         elif op == "sw":
             rt = int(parts[1][1:])
             offset, base = map(int, parts[2].strip("()").split("($"))
-            self.memory[self.registers[base] + offset] = self.registers[rt]
+            mem_address = (self.registers[base] + offset) // 4
+            self.memory[mem_address] = self.registers[rt]
         elif op == "add":
             rd = int(parts[1][1:])
             rs = int(parts[2][1:])
             rt = int(parts[3][1:])
-            self.registers[rd] = self.registers[rs] + self.registers[rt]
+            if not self.branch_taken:
+                self.registers[rd] = self.registers[rs] + self.registers[rt]
         elif op == "sub":
             rd = int(parts[1][1:])
             rs = int(parts[2][1:])
             rt = int(parts[3][1:])
-            self.registers[rd] = self.registers[rs] - self.registers[rt]
+            if not self.branch_taken:
+                self.registers[rd] = self.registers[rs] - self.registers[rt]
         elif op == "beq":
             rs = int(parts[1][1:])
             rt = int(parts[2][1:])
             offset = int(parts[3])
             if self.registers[rs] == self.registers[rt]:
                 self.branch_taken = True
-                self.branch_pc = self.pc + offset  # ✅ WB 階段才改變 `PC`
+                self.branch_pc = self.pc + offset
         else:
             raise ValueError(f"Unknown instruction: {instruction}")
         return True
 
-    def log_pipeline_state(self):
-        state = f"Cycle {self.cycles}: \n"
-        for instruction, stage in self.pipeline:
-            state += f"    {instruction} {stage}\n"
-        self.stage_log.append(state)
 
-test_case = 1
+test_case = 2
 with open(f"inputs/test{test_case}.txt", "r") as f:
     instructions = f.readlines()
 

@@ -1,55 +1,55 @@
 
 Case 3: 
 ## Each clocks
-Cycle 0: 
-Cycle 1: 
-    lw $2, 8($0) IF
-Cycle 2: 
-    lw $2, 8($0) ID
-    lw $3, 16($0) IF
-Cycle 3: 
-    lw $2, 8($0) EX
-    lw $3, 16($0) ID
-    beq $2, $3, 1 IF
-Cycle 4: 
-    lw $2, 8($0) MEM
-    lw $3, 16($0) EX
-    beq $2, $3, 1 ID
-    add $4, $2, $3 IF
-Cycle 5: 
-    lw $2, 8($0) WB
-    lw $3, 16($0) MEM
-    beq $2, $3, 1 ID
-    add $4, $2, $3 IF
-Cycle 6: 
-    lw $3, 16($0) WB
-    beq $2, $3, 1 ID
-    add $4, $2, $3 IF
-Cycle 7: 
-    beq $2, $3, 1 EX
-    add $4, $2, $3 ID
-    sw $4, 24($0) IF
-Cycle 8: 
-    beq $2, $3, 1 MEM
-    add $4, $2, $3 EX
-    sw $4, 24($0) ID
-Cycle 9: 
-    beq $2, $3, 1 WB
-    add $4, $2, $3 MEM
-    sw $4, 24($0) EX
-Cycle 10: 
-    add $4, $2, $3 WB
-    sw $4, 24($0) MEM
-Cycle 11: 
-    sw $4, 24($0) WB
+Cycle 1
+Cycle 2
+lw $2, 8($0): IF Unknown
+Cycle 3
+lw $2, 8($0): ID ALUSrc=1, MemRead=1
+lw $3, 16($0): IF Unknown
+Cycle 4
+lw $2, 8($0): EX ALUOp=00
+lw $3, 16($0): ID ALUSrc=1, MemRead=1
+beq $2, $3, 1: IF Unknown
+Cycle 5
+lw $2, 8($0): MEM MemRead=1
+lw $3, 16($0): EX ALUOp=00
+beq $2, $3, 1: ID Branch=1, ALUOp=01
+add $4, $2, $3: IF Unknown
+Cycle 6
+lw $2, 8($0): WB MemToReg=1, RegWrite=1
+lw $3, 16($0): MEM MemRead=1
+beq $2, $3, 1: ID Branch=1, ALUOp=01
+add $4, $2, $3: IF Unknown
+Cycle 7
+lw $3, 16($0): WB MemToReg=1, RegWrite=1
+beq $2, $3, 1: ID Branch=1, ALUOp=01
+add $4, $2, $3: IF Unknown
+Cycle 8
+beq $2, $3, 1: EX ALUOp=01
+add $4, $2, $3: ID RegDst=1, RegWrite=1
+sw $4, 24($0): IF Unknown
+Cycle 9
+beq $2, $3, 1: MEM Don't Care
+add $4, $2, $3: EX ALUOp=10
+sw $4, 24($0): ID ALUSrc=1, MemWrite=1
+Cycle 10
+beq $2, $3, 1: WB Don't Care
+add $4, $2, $3: MEM Don't Care
+sw $4, 24($0): EX ALUOp=00
+Cycle 11
+add $4, $2, $3: WB RegWrite=1, MemToReg=0
+sw $4, 24($0): MEM MemWrite=1
+Cycle 12
+sw $4, 24($0): WB Don't Care
 
 
 ## Final Result:
 
-Total Cycles: 11
+Total Cycles: 12
 
 Final Register Values:
 Registers: [0, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 
 Final Memory Values:
-[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1]
+[1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
