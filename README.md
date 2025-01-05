@@ -27,6 +27,7 @@ py src\main.py
 輸出格式: Siroku
 Pipline、stall、forwarding: 西瓜
 Data hazard、Predict not taken: 企鵝
+收尾檢查bug丶代碼格式美化：Jaxx9527
 
 - 1
 - 1115530 劉柏均(SiroKu1006):處理輸入、輸出和部分stall
