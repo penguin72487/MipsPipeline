@@ -1,3 +1,32 @@
+class ControlSignals:
+    """
+    封裝 pipeline 操作的控制信號。
+    """
+    def __init__(self):
+        self.RegDst = 0      # 1: rd, 0: rt
+        self.ALUSrc = 0      # 1: immediate, 0: register
+        self.MemToReg = 0    # 1: Mem data, 0: ALU result
+        self.RegWrite = 0    # 1: write to register
+        self.MemRead = 0     # 1: read from memory
+        self.MemWrite = 0    # 1: write to memory
+        self.Branch = 0      # 1: branch
+        self.ALUOp = '00'    # '00': add, '01': sub, '10': beq, etc.
+
+    def reset(self):
+        self.RegDst = 0
+        self.ALUSrc = 0
+        self.MemToReg = 0
+        self.RegWrite = 0
+        self.MemRead = 0
+        self.MemWrite = 0
+        self.Branch = 0
+        self.ALUOp = '00'
+
+    def __str__(self):
+        return (f"RegDst={self.RegDst}, ALUSrc={self.ALUSrc}, MemToReg={self.MemToReg}, "
+                f"RegWrite={self.RegWrite}, MemRead={self.MemRead}, MemWrite={self.MemWrite}, "
+                f"Branch={self.Branch}, ALUOp={self.ALUOp}")
+
 class MIPSPipeline:
     def __init__(self):
         self.registers = [1] * 32
@@ -9,8 +38,8 @@ class MIPSPipeline:
         self.stalled = False  # 是否因為 hazard 停滯
         self.branch_taken = False  # beq 是否成立
         self.branch_pc = None  # beq 在 WB 階段才改變 PC
-        # self.branch_canceled = False  # 一開始是 False，如果 beq 成立，則改為 True
         self.branch_stall_count = 0  # beq 的 ID 階段需要 stall 兩次
+        self.control_signals = ControlSignals()  # 初始化控制信號
         self.registers[0] = 0  # $zero 永遠為 0
 
     def execute_pipeline(self, instructions):
@@ -20,14 +49,14 @@ class MIPSPipeline:
             # debug print
             print(f"[DEBUG] cycle={self.cycles}, pc={self.pc}, pipeline={self.pipeline}, "
                   f"branch_taken={self.branch_taken}, branch_pc={self.branch_pc}, "
-                  f"stall_count={self.branch_stall_count}")
-            
+                  f"stall_count={self.branch_stall_count}, ControlSignals={self.control_signals}")
+
             self.log_pipeline_state()
+            self.control_signals.reset()  # 重置控制信號於每個週期開始
+
             # 處理 pipeline
             if self.pipeline:
                 self.process_pipeline()
-                
-
 
             # ✅ beq 在 WB 階段影響 PC，但不清空 pipeline
             if self.branch_taken and self.branch_pc is not None:
@@ -58,33 +87,27 @@ class MIPSPipeline:
                     data_hazard = True
                     continue
                 else:
+                    # 在 ID 階段解碼指令並設置控制信號
+                    self.control_signals = self.decode_instruction(instruction)
                     self.pipeline[i] = (instruction, "ID")
 
             elif stage == "ID":
-                # if "beq" in instruction:
-                #     if self.branch_stall_count < 2:
-                #         self.branch_stall_count += 1
-                #         data_hazard = True
-                #         stalled_by_beq = True
-                #         continue
-                #     else:
-                #         self.branch_stall_count = 0
-
+                # Hazard 檢查
                 if self.check_hazard(instruction, i, stage):
                     data_hazard = True
                     continue
                 else:
-                    # beq 指令在 ID 階段就要判斷是否要跳 吃飯完回來寫
-                    if "beq" in instruction:
+                    # 處理分支
+                    if self.control_signals.Branch:
                         rs = int(instruction.split()[1][1:])
                         rt = int(instruction.split()[2][1:])
+                        offset = int(instruction.split()[3])
                         if self.registers[rs] == self.registers[rt]:
                             self.branch_taken = True
-                            self.branch_pc = self.pc + int(instruction.split()[3])-1
-                            # self.branch_canceled = True
-                            for j in range(i+1,len(self.pipeline)):
+                            self.branch_pc = self.pc + offset
+                            # beq 成立，清空 pipeline 中的後續指令
+                            for j in range(i + 1, len(self.pipeline)):
                                 self.pipeline[j] = ("", "DONE")
-
                     self.pipeline[i] = (instruction, "EX")
 
             elif stage == "EX":
@@ -92,16 +115,109 @@ class MIPSPipeline:
                     self.pipeline[i] = (instruction, "MEM")
 
             elif stage == "MEM":
+                if self.control_signals.MemRead:
+                    # 從記憶體讀取數據
+                    rt = int(instruction.split()[1][1:])
+                    offset_base = instruction.split()[2]
+                    offset, base = self.parse_offset_base(offset_base)
+                    mem_address = (self.registers[base] + offset) // 4
+                    self.registers[rt] = self.memory[mem_address]
+                if self.control_signals.MemWrite:
+                    # 寫入數據到記憶體
+                    rt = int(instruction.split()[1][1:])
+                    offset_base = instruction.split()[2]
+                    offset, base = self.parse_offset_base(offset_base)
+                    mem_address = (self.registers[base] + offset) // 4
+                    self.memory[mem_address] = self.registers[rt]
                 self.pipeline[i] = (instruction, "WB")
 
             elif stage == "WB":
-                if "beq" in instruction and self.branch_taken:
-                    self.branch_pc = self.pc
+                if self.control_signals.RegWrite:
+                    rd = self.get_write_register(instruction)
+                    if self.control_signals.MemToReg:
+                        # 寫回來自記憶體的數據，已在 MEM 階段完成
+                        pass
+                    else:
+                        # 寫回來自 ALU 的結果，已在 EX 階段完成
+                        pass
                 self.pipeline[i] = (instruction, "DONE")
 
         # 移除執行完成 (DONE) 的指令
         self.pipeline = [(inst, stage) for inst, stage in self.pipeline if stage != "DONE"]
         self.stalled = data_hazard
+
+    def decode_instruction(self, instruction):
+        """
+        解碼指令並設置控制信號。
+        """
+        parts = instruction.split()
+        op = parts[0]
+        signals = ControlSignals()
+
+        if op in ["add", "sub"]:
+            signals.RegDst = 1
+            signals.ALUSrc = 0
+            signals.MemToReg = 0
+            signals.RegWrite = 1
+            signals.MemRead = 0
+            signals.MemWrite = 0
+            signals.Branch = 0
+            signals.ALUOp = '10'  # R-type
+        elif op == "lw":
+            signals.RegDst = 0
+            signals.ALUSrc = 1
+            signals.MemToReg = 1
+            signals.RegWrite = 1
+            signals.MemRead = 1
+            signals.MemWrite = 0
+            signals.Branch = 0
+            signals.ALUOp = '00'  # load/store uses add
+        elif op == "sw":
+            signals.RegDst = 'X'  # 不需要
+            signals.ALUSrc = 1
+            signals.MemToReg = 'X'  # 不需要
+            signals.RegWrite = 0
+            signals.MemRead = 0
+            signals.MemWrite = 1
+            signals.Branch = 0
+            signals.ALUOp = '00'  # load/store uses add
+        elif op == "beq":
+            signals.RegDst = 'X'  # 不需要
+            signals.ALUSrc = 0
+            signals.MemToReg = 'X'  # 不需要
+            signals.RegWrite = 0
+            signals.MemRead = 0
+            signals.MemWrite = 0
+            signals.Branch = 1
+            signals.ALUOp = '01'  # beq uses subtract
+        else:
+            raise ValueError(f"Unknown instruction: {instruction}")
+
+        return signals
+
+    def parse_offset_base(self, offset_base):
+        """
+        解析偏移和基址，例如 "8($0)" -> (8, 0)
+        """
+        offset_str, base_str = offset_base.split("(")
+        offset = int(offset_str)
+        base = int(base_str.strip(")$")[1:])
+        return offset, base
+
+    def get_write_register(self, instruction):
+        """
+        根據 RegDst 獲取寫回的寄存器。
+        """
+        parts = instruction.split()
+        op = parts[0]
+        if op in ["add", "sub"]:
+            rd = int(parts[1][1:])
+            return rd
+        elif op == "lw":
+            rt = int(parts[1][1:])
+            return rt
+        else:
+            return None  # 不需要寫回
 
     def check_hazard(self, instruction, idx, stage):
         """
@@ -120,7 +236,6 @@ class MIPSPipeline:
         op = parts[0]
         sources = []
         target = None
-
 
         if op in ["add", "sub"]:
             target = int(parts[1][1:])   # parts[1] 是 "$1"
@@ -149,7 +264,6 @@ class MIPSPipeline:
 
         # 依序檢查「更前面的指令」是否會造成 hazard
 
-        
         if op == "beq": 
             # beq 指令的 hazard 檢查
             # 如果rt, rs 在pipeline[:idx]中
@@ -163,15 +277,14 @@ class MIPSPipeline:
                 inst_j_target = int(inst_j_parts[1][1:])
                 if inst_j_target not in sources:
                     continue
-                
-                
+
                 if inst_j_op in ["add", "sub"]:
                     if stage_j in ["IF", "ID", "EX", "MEM"]:
                         return True
                 if inst_j_op in ["lw"]:
                     if stage_j in ["IF", "ID", "EX", "MEM", "WB"]:
                         return True
-            
+
         elif op in ["add", "sub"]:
             # add sub 指令的 hazard 檢查
             # 如果 rs, rt 在 pipeline[:idx] 中
@@ -185,41 +298,16 @@ class MIPSPipeline:
                 inst_j_target = int(inst_j_parts[1][1:])
                 if inst_j_target not in sources:
                     continue
-                
+
                 if inst_j_op in ["add", "sub"]:
                     if stage_j in ["IF", "ID", "EX"]:
                         return True
                 if inst_j_op in ["lw"]:
-                    if stage_j in ["IF", "ID", "EX", "MEM"]: #再確認一下
+                    if stage_j in ["IF", "ID", "EX", "MEM"]:
                         return True
         elif op in ["lw"]:
             return False
 
-
-
-                
-
-
-        # # 依序檢查「更前面的指令」是否會造成 hazard
-        # for j in range(idx):
-        #     inst_j, stage_j = self.pipeline[j]
-        #     # inst_j 已經是沒有逗號的字串
-        #     inst_j_parts = inst_j.split()
-        #     inst_j_op = inst_j_parts[0]
-        #     inst_j_target = None
-
-        #     if inst_j_op in ["add", "sub", "lw"]:
-        #         inst_j_target = int(inst_j_parts[1][1:])
-            
-        #     if inst_j_target and inst_j_target in sources:
-        #         if stage_j == "ID":
-        #             return True
-        #         if stage_j == "EX" and inst_j_op == "lw":
-        #             return True
-        #         if stage_j in ["MEM", "WB"]:
-        #             continue
-            
-        
         return False
 
     def get_signal(self, stage, instruction):
@@ -272,9 +360,6 @@ class MIPSPipeline:
         parts = instruction.split()
         op = parts[0]
 
-        # if self.branch_canceled and op not in ["beq"]:
-        #     return True
-
         if op == "lw":
             # parts = ["lw","$2","8($0)"]
             rt = parts[1]       # "$2"
@@ -315,25 +400,15 @@ class MIPSPipeline:
             rs = int(parts[1][1:])
             rt = int(parts[2][1:])
             offset = int(parts[3])
-
-            # if self.registers[rs] == self.registers[rt]:
-            #     self.branch_taken = True
-            #     self.branch_pc = self.pc + offset
-            #     self.branch_canceled = True
-                # if offset < 0:
-                #     self.pipeline = []
-                # else:
-                #     # beq 成立，清空 beq 後面的指令
-                #     for i in range(offset):
-                #         self.pipeline[i+1] = ("", "DONE")
+            # 分支決策在 ID 階段處理
+            pass
         else:
             raise ValueError(f"Unknown instruction: {instruction}")
 
         return True
 
-
 # ------------------ 以下是 main 的執行與輸出 ------------------ 
-test_case = 8
+test_case = 5
 with open(f"inputs/test{test_case}.txt", "r") as f:
     instructions = f.readlines()
 
@@ -346,7 +421,7 @@ mem_str = f"{mem_ary}"
 
 output_text = f"""
 Case {test_case}: 
-## Each clocks
+## Each Cycle
 {''.join(pipeline.stage_log)}
 
 ## Final Result:

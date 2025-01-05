@@ -1,6 +1,6 @@
 
 Case 5: 
-## Each clocks
+## Each Cycle
 Cycle 1
 sub $1  $4  $4: IF
 Cycle 2

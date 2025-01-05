@@ -1,6 +1,6 @@
 
 Case 7: 
-## Each clocks
+## Each Cycle
 Cycle 1
 add $1 $1 $2: IF
 Cycle 2
