@@ -189,20 +189,8 @@ class MIPSPipeline:
             raise ValueError(f"Unknown instruction: {instruction}")
         return True
 
-<<<<<<< HEAD
 
 test_case = 2
-=======
-    def log_pipeline_state(self):
-        if self.cycles == 0:
-            return
-        state = f"Cycle {self.cycles}: \n"
-        for instruction, stage in self.pipeline:
-            state += f"    {instruction} {stage}\n"
-        self.stage_log.append(state)
-
-test_case = 8
->>>>>>> 15c1e4a812f643be0c6ac4d33d65992ef3203938
 with open(f"inputs/test{test_case}.txt", "r") as f:
     instructions = f.readlines()
 
