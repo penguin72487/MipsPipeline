@@ -56,6 +56,6 @@ A1115513 劉沛辰(peipei930725):這專題真的很恐怖，瘋狂 debug，原�
 
 我寫這個壓力好大，好難寫，寫了這個才真的了解 data hazard 發生在哪? Forwarding 是在哪裡。
 
-### A1115532 Jaxx Zu([Jaxx9527](https://github.com/Jaxx9527))
+### A1115532 [Jaxx Zu](https://github.com/JaxxZu)
 
 一開始分配給我的工作是檢查bug&fix it。但是組員們都很讚，我使用了不同可能會導致出錯的指令搭配都能產生正確output。只好做代碼美化功能。感恩。
